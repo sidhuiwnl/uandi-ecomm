@@ -59,6 +59,17 @@ export const deleteProduct = createAsyncThunk(
   }
 );
 
+export const deleteVariant = createAsyncThunk(
+  'products/deleteVariant',
+  async ({ productId, variantId }) => {
+    const response = await fetch(`${API_URL}/products/${productId}/variants/${variantId}`, {
+      method: 'DELETE'
+    });
+    const data = await response.json();
+    return { variantId, ...data };
+  }
+);
+
 export const updateStock = createAsyncThunk(
   'products/updateStock',
   async ({ variantId, stock }) => {
@@ -66,6 +77,19 @@ export const updateStock = createAsyncThunk(
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ stock })
+    });
+    const data = await response.json();
+    return data;
+  }
+);
+
+export const updateVariant = createAsyncThunk(
+  'products/updateVariant',
+  async ({ productId, variantId, variantData }) => {
+    const response = await fetch(`${API_URL}/products/${productId}/variants/${variantId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(variantData)
     });
     const data = await response.json();
     return data;
@@ -103,9 +127,23 @@ const productsSlice = createSlice({
       })
       .addCase(deleteProduct.fulfilled, (state, action) => {
         state.products = state.products.filter(p => p.product_id !== action.payload.id);
+      })
+      .addCase(deleteVariant.fulfilled, (state, action) => {
+        if (state.selectedProduct) {
+          state.selectedProduct.variants = state.selectedProduct.variants.filter(v => v.id !== action.payload.variantId);
+        }
+      })
+      .addCase(updateVariant.fulfilled, (state, action) => {
+        if (state.selectedProduct) {
+          const index = state.selectedProduct.variants.findIndex(v => v.id === action.payload.data.id);
+          if (index !== -1) {
+            state.selectedProduct.variants[index] = action.payload.data;
+          }
+        }
       });
   }
 });
 
 export const { clearSelectedProduct } = productsSlice.actions;
+export const selectSelectedProduct = (state) => state.products.selectedProduct;
 export default productsSlice.reducer;

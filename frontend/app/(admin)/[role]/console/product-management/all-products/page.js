@@ -13,11 +13,13 @@ import {
   EyeIcon, 
   PlusIcon,
   MagnifyingGlassIcon,
-  FunnelIcon 
+  FunnelIcon,
+  ChevronDownIcon
 } from '@heroicons/react/24/outline';
 import ProductPreviewModal from '@/components/ProductPreviewModal';
 import StockUpdateModal from '@/components/StockUpdateModal';
 import { useParams, useRouter } from "next/navigation";
+import {navigate} from "next/dist/client/components/segment-cache";
 
 
 
@@ -162,40 +164,94 @@ export default function AllProductsPage() {
       </div>
 
       {/* Filters */}
-      <div className="card">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="relative">
-            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+      <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          {/* Search Box */}
+          <div className="relative flex-1 max-w-md">
+            <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
             <input
-              type="text"
-              placeholder="Search products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-field pl-10"
+                type="text"
+                placeholder="Search products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 ease-in-out bg-gray-50 hover:bg-white"
+                aria-label="Search products"
             />
           </div>
-          
-          <select
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-            className="input-field"
-          >
-            <option value="all">All Categories</option>
-            {(categories || []).map(cat => (
-              <option key={cat.category_id} value={cat.category_id}>{cat.category_name}</option>
-            ))}
-          </select>
 
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="input-field"
-          >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
+          {/* Filter Controls */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Category Filter */}
+            <div className="relative">
+              <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="w-full sm:w-48 px-4 py-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 ease-in-out bg-gray-50 hover:bg-white appearance-none pr-10 cursor-pointer"
+                  aria-label="Filter by category"
+              >
+                <option value="all">All Categories</option>
+                {/* Categories will be populated from Redux */}
+              </select>
+              <ChevronDownIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+
+            {/* Status Filter */}
+            <div className="relative">
+              <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full sm:w-40 px-4 py-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all duration-200 ease-in-out bg-gray-50 hover:bg-white appearance-none pr-10 cursor-pointer"
+                  aria-label="Filter by status"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+              <ChevronDownIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+          </div>
         </div>
+
+        {/* Active Filters Indicator */}
+        {(searchTerm || categoryFilter !== 'all' || statusFilter !== 'all') && (
+            <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
+              <FunnelIcon className="w-4 h-4 text-gray-400" />
+              <span className="text-sm text-gray-500">Active filters:</span>
+              {searchTerm && (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
+                Search: &#34;{searchTerm}
+                <button
+                    onClick={() => setSearchTerm('')}
+                    className="ml-1.5 hover:text-pink-900"
+                >
+                  ×
+                </button>
+              </span>
+              )}
+              {categoryFilter !== 'all' && (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                Category
+                <button
+                    onClick={() => setCategoryFilter('all')}
+                    className="ml-1.5 hover:text-blue-900"
+                >
+                  ×
+                </button>
+              </span>
+              )}
+              {statusFilter !== 'all' && (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                Status: {statusFilter}
+                    <button
+                        onClick={() => setStatusFilter('all')}
+                        className="ml-1.5 hover:text-green-900"
+                    >
+                  ×
+                </button>
+              </span>
+              )}
+            </div>
+        )}
       </div>
 
       {/* Products Table */}
@@ -214,7 +270,11 @@ export default function AllProductsPage() {
             </thead>
             <tbody>
               {filteredProducts.map(product => (
-                <tr key={product.product_id} className="border-b border-gray-100 hover:bg-gray-50">
+                <tr
+                    onClick={() => {
+                      router.push(`/${role}/console/product-management/product-details/${product.product_id}`);
+                    }}
+                    key={product.product_id} className="border-b border-gray-100 hover:bg-gray-50">
                   <td className="py-4 px-4">
                     <div className="flex items-center gap-3">
                       {product.main_image ? (
@@ -262,12 +322,12 @@ export default function AllProductsPage() {
                   <td className="py-4 px-4">
                     <div className="flex items-center justify-end gap-2">
                       <button
-  onClick={() => router.push(`/${role}/console/product-management/product-details/${product.product_id}`)}
-  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-  title="View Details"
->
-  <EyeIcon className="w-5 h-5" />
-</button>
+                      onClick={() => router.push(`/${role}/console/product-management/product-details/${product.product_id}`)}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="View Details"
+                      >
+                        <EyeIcon className="w-5 h-5" />
+                      </button>
                       <Link href={`/${role}/console/product-management/edit-product/${product.product_id}`} className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors" title="Edit">
                         <PencilIcon className="w-5 h-5" />
                       </Link>

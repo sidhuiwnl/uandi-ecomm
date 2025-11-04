@@ -1,4 +1,4 @@
-// frontend/app/(admin)/product-management/edit-product/[id]/page.js
+// frontend/app/(admin)/product-management/edit-product/[variant-id]/page.js
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -50,7 +50,7 @@ export default function EditProductPage() {
         is_active: selectedProduct.is_active
       });
 
-      setImages(selectedProduct.images.map(img => ({
+      setImages(selectedProduct.main_image.map(img => ({
         ...img,
         isNew: false
       })));

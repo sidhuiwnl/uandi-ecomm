@@ -28,7 +28,7 @@ const productModel = {
     const productQuery = `
       SELECT p.*, c.category_name
       FROM products p
-      LEFT JOIN categories c ON p.category_id = c.category_id
+             LEFT JOIN categories c ON p.category_id = c.category_id
       WHERE p.product_id = ?
     `;
     const [product] = await pool.query(productQuery, [id]);
@@ -37,22 +37,23 @@ const productModel = {
 
     // Get variants
     const [variants] = await pool.query(
-      'SELECT * FROM variants WHERE product_id = ?',
-      [id]
+        'SELECT * FROM variants WHERE product_id = ?',
+        [id]
     );
 
-    // Get images
-    const [images] = await pool.query(
-      'SELECT * FROM product_images WHERE product_id = ?',
-      [id]
+    // ✅ Get only the main image
+    const [mainImage] = await pool.query(
+        'SELECT * FROM product_images WHERE product_id = ? AND is_main = 1 LIMIT 1 ',
+        [id]
     );
 
     return {
       ...product[0],
       variants,
-      images
+      main_image: mainImage || null
     };
   },
+
 
   // Create product
   createProduct: async (data) => {
