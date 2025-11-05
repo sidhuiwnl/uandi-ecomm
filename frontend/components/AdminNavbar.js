@@ -102,7 +102,7 @@ export default function AdminNavbar() {
   return (
     <>
       {/* ───── Desktop & Tablet ───── */}
-      <nav className="hidden md:flex w-full border-b  border-rose-400/50 items-center min-h-[75px] justify-between px-6 bg-white-200/20 backdrop-blur-3xl">
+      <nav className="hidden md:flex w-full border-b  border-pink-100 items-center min-h-[75px] justify-between px-6 bg-white-200/20 backdrop-blur-3xl">
         {/* Left */}
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-2">

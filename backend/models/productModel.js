@@ -26,44 +26,60 @@ const productModel = {
   // Get product by ID with full details
   getProductById: async (id) => {
     const productQuery = `
-      SELECT p.*, c.category_name
+      SELECT
+        p.*,
+        c.category_name,
+        t.tag_name
       FROM products p
              LEFT JOIN categories c ON p.category_id = c.category_id
+             LEFT JOIN tags t ON p.tag_id = t.tag_id
       WHERE p.product_id = ?
     `;
+
     const [product] = await pool.query(productQuery, [id]);
 
     if (product.length === 0) return null;
 
-    // Get variants
     const [variants] = await pool.query(
         'SELECT * FROM variants WHERE product_id = ?',
         [id]
     );
 
-    // ✅ Get only the main image
     const [mainImage] = await pool.query(
-        'SELECT * FROM product_images WHERE product_id = ? AND is_main = 1 LIMIT 1 ',
+        'SELECT * FROM product_images WHERE product_id = ? AND is_main = 1 LIMIT 1',
         [id]
     );
 
+    const [variantImages] = await pool.query(
+        'SELECT * FROM product_images WHERE product_id = ? AND variant_id IS NOT NULL',
+        [id]
+    );
+
+    const variantsWithImages = variants.map(variant => ({
+      ...variant,
+      images: variantImages.filter(img => img.variant_id === variant.variant_id)
+    }));
+
     return {
       ...product[0],
-      variants,
-      main_image: mainImage || null
+      variants: variantsWithImages,
+      main_image: mainImage.length > 0 ? mainImage : null
     };
   },
 
 
   // Create product
   createProduct: async (data) => {
-    const { category_id, product_name, description, is_active } = data;
+    const { category_id, tag_id, product_name, description, is_active } = data;
+
     const [result] = await pool.query(
-      'INSERT INTO products (category_id, product_name, description, is_active) VALUES (?, ?, ?, ?)',
-      [category_id, product_name, description, is_active !== undefined ? is_active : true]
+        'INSERT INTO products (category_id, tag_id, product_name, description, is_active) VALUES (?, ?, ?, ?, ?)',
+        [category_id, tag_id, product_name, description, is_active !== undefined ? is_active : true]
     );
+
     return result;
   },
+
 
   // Update product
   updateProduct: async (id, data) => {
@@ -107,7 +123,7 @@ const productModel = {
       `INSERT INTO variants (product_id, variant_name, sku, mrp_price, price, 
        gst_percentage, gst_included, gst_amount, final_price, stock, weight, unit)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [product_id, variant_name, sku, mrp_price, price, gst_percentage, 
+      [product_id, variant_name, sku, mrp_price, price, gst_percentage,
        gst_included, gst_amount, final_price, stock, weight, unit]
     );
     return result;
@@ -165,6 +181,12 @@ const productModel = {
 
   deleteProductImage: async (id) => {
     const [result] = await pool.query('DELETE FROM product_images WHERE image_id = ?', [id]);
+    return result;
+  },
+
+
+  getAllTags : async () => {
+    const [result] = await pool.query("SELECT * FROM tags ORDER BY tag_name ASC");
     return result;
   }
 };

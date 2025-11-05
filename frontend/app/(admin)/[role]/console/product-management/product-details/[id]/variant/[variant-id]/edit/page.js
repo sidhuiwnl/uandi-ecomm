@@ -56,7 +56,7 @@ export default function Page() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+            <div className="min-h-screen  flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-500 mx-auto mb-4"></div>
                     <p className="text-gray-500">Loading variant details...</p>
@@ -67,7 +67,7 @@ export default function Page() {
 
     if (!variant) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+            <div className="min-h-screen  flex items-center justify-center">
                 <div className="text-center">
                     <p className="text-gray-500 text-lg mb-4">Variant not found</p>
                     <button
@@ -82,7 +82,7 @@ export default function Page() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
+        <div className="min-h-screen py-8">
             <div className="container mx-auto px-4 max-w-4xl">
                 {/* Header */}
                 <div className="flex items-center gap-4 mb-8">

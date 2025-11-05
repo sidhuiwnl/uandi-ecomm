@@ -133,35 +133,48 @@ export default function AllProductsPage() {
       </div>
 
       {/* Quick stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="card flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-500">Total Products</p>
-            <p className="text-2xl font-semibold text-gray-900">{stats.total}</p>
-          </div>
-          <div className="rounded-lg bg-pink-50 p-3">
-            <FunnelIcon className="w-6 h-6 text-pink-600" />
-          </div>
-        </div>
-        <div className="card flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-500">Active</p>
-            <p className="text-2xl font-semibold text-gray-900">{stats.active}</p>
-          </div>
-          <div className="rounded-lg bg-green-50 p-3">
-            <span className="inline-block h-3 w-3 rounded-full bg-green-500" />
-          </div>
-        </div>
-        <div className="card flex items-center justify-between">
-          <div>
-            <p className="text-sm text-gray-500">Out of Stock</p>
-            <p className="text-2xl font-semibold text-gray-900">{stats.outOfStock}</p>
-          </div>
-          <div className="rounded-lg bg-amber-50 p-3">
-            <span className="inline-block h-3 w-3 rounded-full bg-amber-500" />
-          </div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        {[
+          {
+            title: "Total Products",
+            value: stats.total,
+            icon: <FunnelIcon className="w-6 h-6 text-pink-600" />,
+            bg: "bg-pink-50",
+          },
+          {
+            title: "Active",
+            value: stats.active,
+            icon: <span className="inline-block h-3 w-3 rounded-full bg-green-500" />,
+            bg: "bg-green-50",
+          },
+          {
+            title: "Out of Stock",
+            value: stats.outOfStock,
+            icon: <span className="inline-block h-3 w-3 rounded-full bg-amber-500" />,
+            bg: "bg-amber-50",
+          },
+        ].map((item, i) => (
+            <div
+                key={i}
+                className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition-all duration-300 hover:shadow-lg "
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">{item.title}</p>
+                  <p className="mt-1 text-3xl font-semibold text-gray-900">
+                    {item.value}
+                  </p>
+                </div>
+                <div
+                    className={`rounded-xl ${item.bg} p-3 transition-transform duration-300 group-hover:scale-110`}
+                >
+                  {item.icon}
+                </div>
+              </div>
+            </div>
+        ))}
       </div>
+
 
       {/* Filters */}
       <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">

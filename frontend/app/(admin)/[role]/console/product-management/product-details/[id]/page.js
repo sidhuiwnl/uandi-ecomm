@@ -1,4 +1,3 @@
-// frontend/app/(admin)/product-management/product-details/[variant-id]/page.js
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -14,8 +13,6 @@ import {
   ArrowLeftIcon,
   PhotoIcon,
   CubeIcon,
-  TagIcon,
-  ChartBarIcon,
   CheckCircleIcon,
   XCircleIcon
 } from '@heroicons/react/24/outline';
@@ -34,7 +31,7 @@ export default function ProductDetailsPage() {
 
   const { selectedProduct } = useSelector(state => state.products);
 
-  console.log("products",selectedProduct?.variants);
+  console.log(selectedProduct);
 
   const [loading, setLoading] = useState(true);
   const [showAddVariantModal, setShowAddVariantModal] = useState(false);
@@ -97,6 +94,10 @@ export default function ProductDetailsPage() {
   const handleEditVariant = (variant) => {
     setSelectedVariant(variant);
     setShowEditVariantModal(true);
+  };
+
+  const openImageGallery = () => {
+    setShowImageGallery(true);
   };
 
   if (loading) {
@@ -163,24 +164,33 @@ export default function ProductDetailsPage() {
               {/* Product Image Card */}
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="p-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <PhotoIcon className="w-6 h-6 text-pink-500" />
+                  <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center justify-between">
                     Product Image
+                    {selectedProduct.tag_name && (
+                        <span className="bg-pink-500 text-white text-sm font-medium px-3 py-1 rounded-full shadow-md">
+                        {selectedProduct.tag_name}
+                      </span>
+                    )}
                   </h2>
-
                   {selectedProduct.main_image && selectedProduct.main_image.length > 0 ? (
                       <div className="space-y-4">
-                        <div className="relative bg-gray-100 rounded-xl overflow-hidden aspect-square">
+                        <div className="relative bg-gray-100 rounded-xl overflow-hidden aspect-square cursor-pointer" onClick={openImageGallery}>
                           <img
                               src={selectedProduct.main_image.find(img => img.is_main)?.image_url || selectedProduct.main_image[0].image_url}
                               alt={selectedProduct.product_name}
                               className="w-full h-full object-cover"
+                              onClick={openImageGallery}
                               onError={(e) => {
-                                e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100%25" height="256" viewBox="0 0 400 256"%3E%3Crect width="400" height="256" fill="%23f3f4f6"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-size="16"%3ENo Image%3C/text%3E%3C/svg%3E';
+                                e.target.src =
+                                    'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100%25" height="256" viewBox="0 0 400 256"%3E%3Crect width="400" height="256" fill="%23f3f4f6"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" fill="%239ca3af" font-size="16"%3ENo Image%3C/text%3E%3C/svg%3E';
                               }}
                           />
+
                           <button
-                              onClick={() => setShowImageGallery(true)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openImageGallery();
+                              }}
                               className="absolute top-4 right-4 bg-white/90 hover:bg-white p-3 rounded-xl transition-all duration-200 shadow-lg hover:scale-105"
                           >
                             <PhotoIcon className="w-5 h-5 text-gray-700" />
@@ -195,7 +205,7 @@ export default function ProductDetailsPage() {
                                       src={image.image_url}
                                       alt={`${selectedProduct.product_name} ${index + 1}`}
                                       className="w-full h-20 object-cover rounded-lg cursor-pointer hover:opacity-75 transition-opacity border-2 border-transparent hover:border-pink-500"
-                                      onClick={() => setShowImageGallery(true)}
+                                      onClick={openImageGallery}
                                       onError={(e) => {
                                         e.target.style.display = 'none';
                                       }}
@@ -404,7 +414,7 @@ export default function ProductDetailsPage() {
             <EditVariantModal
                 variant={selectedVariant}
                 productId={selectedProduct.product_id}
-                images={selectedProduct.images || []}
+                images={selectedProduct.main_image || []}
                 onClose={() => {
                   setShowEditVariantModal(false);
                   setSelectedVariant(null);
@@ -417,9 +427,9 @@ export default function ProductDetailsPage() {
             />
         )}
 
-        {showImageGallery && selectedProduct.images && (
+        {showImageGallery && selectedProduct.main_image && (
             <ImageGalleryModal
-                images={selectedProduct.images}
+                images={selectedProduct.main_image}
                 productName={selectedProduct.product_name}
                 onClose={() => setShowImageGallery(false)}
             />

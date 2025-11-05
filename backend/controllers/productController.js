@@ -73,8 +73,8 @@ const productController = {
   createProduct: async (req, res) => {
     try {
       const result = await productModel.createProduct(req.body);
-      res.status(201).json({ 
-        success: true, 
+      res.status(201).json({
+        success: true,
         message: 'Product created successfully',
         data: { product_id: result.insertId }
       });
@@ -179,7 +179,21 @@ const productController = {
     } catch (error) {
       res.status(500).json({ success: false, message: error.message });
     }
-  }
+  },
+
+  getAllTags: async (req, res) => {
+    try {
+      const tags = await productModel.getAllTags();
+
+      if (!tags || tags.length === 0) {
+        return res.status(404).json({ success: false, message: 'No tags found' });
+      }
+
+      res.json({ success: true, data: tags });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  },
 };
 
 module.exports = productController;

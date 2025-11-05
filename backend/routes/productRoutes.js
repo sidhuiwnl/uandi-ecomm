@@ -5,6 +5,11 @@ const productController = require('../controllers/productController');
 
 // Product routes
 router.get('/', productController.getAllProducts);
+
+// Tag routes
+router.get("/tags", productController.getAllTags);
+
+
 router.get('/:id', productController.getProductById);
 router.post('/', productController.createProduct);
 router.put('/:id', productController.updateProduct);
@@ -21,5 +26,8 @@ router.post('/images', productController.addProductImage);
 router.delete('/images/:id', productController.deleteProductImage);
 
 router.put('/images/:id', productController.updateProductImage);
+
+
+
 
 module.exports = router;

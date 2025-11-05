@@ -96,6 +96,15 @@ export const updateVariant = createAsyncThunk(
   }
 );
 
+export const getAllTags = createAsyncThunk(
+    'products/tags',
+    async () => {
+        const response = await fetch(`${API_URL}/products/tags`);
+        const data = await response.json();
+        return data.data;
+    }
+)
+
 const productsSlice = createSlice({
   name: 'products',
   initialState: {
@@ -140,7 +149,19 @@ const productsSlice = createSlice({
             state.selectedProduct.variants[index] = action.payload.data;
           }
         }
-      });
+      })
+        .addCase(getAllTags.pending, (state) => {
+            state.loading = true;
+        })
+        .addCase(getAllTags.fulfilled, (state, action) => {
+            state.loading = false;
+            state.tags = action.payload;
+        })
+        .addCase(getAllTags.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.error.message;
+        });
+
   }
 });
 

@@ -4,8 +4,10 @@ import { useParams, useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { deleteVariant, fetchProductById, selectSelectedProduct } from "@/store/productsSlice";
-import { ChevronDown, Plus } from "lucide-react";
+import { ChevronDown, Plus, ArrowLeft } from "lucide-react";
+import ImageGalleryModal from '@/components/ImageGalleryModal';
 
 export default function VariantDetailsPage() {
     const { id, "variant-id": variantId, role } = useParams();
@@ -14,6 +16,7 @@ export default function VariantDetailsPage() {
     const product = useSelector(selectSelectedProduct);
     const [variant, setVariant] = useState(null);
     const [openSection, setOpenSection] = useState(null);
+    const [showImageModal, setShowImageModal] = useState(false);
 
     // Fetch product details when page loads
     useEffect(() => {
@@ -37,6 +40,8 @@ export default function VariantDetailsPage() {
         }
     };
 
+    console.log(variant);
+
     const toggleSection = (section) => {
         setOpenSection(openSection === section ? null : section);
     };
@@ -49,21 +54,68 @@ export default function VariantDetailsPage() {
         );
     }
 
+    // Handle images: Get main image or first one, and check if multiple
+    const images = variant.images || [];
+    const hasMultipleImages = images.length > 1;
+    const mainImage = images.find(img => img.is_main) || images[0] || { image_url: "/placeholder.svg" };
+
+    const openImageModal = () => {
+        if (images.length > 0) {
+            setShowImageModal(true);
+        }
+    };
+
     return (
         <div className="min-h-screen ">
             <div className="container mx-auto max-w-6xl px-4 py-8">
+                {/* Back Button */}
+                <div className="flex items-center gap-4 mb-8">
+                    <Link href={`/${role}/console/product-management/product-details/${id}`}>
+                        <button className="flex items-center gap-2 text-gray-600 hover:text-gray-800 transition-colors p-2 hover:bg-gray-100 rounded-lg">
+                            <ArrowLeft className="w-5 h-5" />
+                            <span className="font-medium">Back to Product</span>
+                        </button>
+                    </Link>
+                </div>
+
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                     {/* Image Section */}
                     <div className="space-y-4">
-                        <div className="bg-gray-100 rounded-2xl overflow-hidden aspect-square">
+                        {/* Main Image */}
+                        <div className="bg-gray-100 rounded-2xl overflow-hidden aspect-square cursor-pointer" onClick={openImageModal}>
                             <Image
-                                src={variant.variant_image || "/placeholder.svg"}
+                                src={mainImage.image_url || "/placeholder.svg"}
                                 alt={variant.variant_name || "Variant Image"}
                                 width={600}
                                 height={600}
                                 className="w-full h-full object-cover"
                             />
                         </div>
+
+                        {/* Thumbnails (if multiple images) */}
+                        {hasMultipleImages && (
+                            <div className="flex gap-2 overflow-x-auto pb-2">
+                                {images.map((img, index) => (
+                                    <div
+                                        key={img.image_id || index}
+                                        className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 cursor-pointer transition-all ${
+                                            img.is_main || index === 0
+                                                ? "border-blue-500 scale-105"
+                                                : "border-transparent hover:border-gray-300"
+                                        }`}
+                                        onClick={openImageModal}
+                                    >
+                                        <Image
+                                            src={img.image_url || "/placeholder.svg"}
+                                            alt={`Thumbnail ${index + 1}`}
+                                            width={80}
+                                            height={80}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     {/* Details Section */}
@@ -179,6 +231,15 @@ export default function VariantDetailsPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Image Modal */}
+            {showImageModal && images.length > 0 && (
+                <ImageGalleryModal
+                    images={images}
+                    productName={variant.variant_name || "Variant"}
+                    onClose={() => setShowImageModal(false)}
+                />
+            )}
         </div>
     );
 }
