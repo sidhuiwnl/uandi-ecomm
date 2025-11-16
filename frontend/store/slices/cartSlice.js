@@ -58,19 +58,29 @@ export const addToCart = createAsyncThunk(
 );
 
 
-export const removeFromCart = createAsyncThunk('cart/removeFromCart', async (item, { dispatch, getState }) => {
-  const { auth } = getState();
-  if (auth.isAuthenticated) {
-    await axios.delete(`${API_URL}/cart/${item.cart_item_id}`, {
-      withCredentials: true,
-    });
-  } else {
-    let cart = JSON.parse(localStorage.getItem('cart')) || [];
-    cart = cart.filter(i => i.variant_id !== item.variant_id);
-    localStorage.setItem('cart', JSON.stringify(cart));
-  }
-  dispatch(fetchCart());
-});
+export const removeFromCart = createAsyncThunk(
+    'cart/removeFromCart',
+    async (item, { dispatch, getState }) => {
+      const { auth } = getState();
+
+      if (auth.isAuthenticated && auth.user) {
+        // For authenticated users - send user_id in the request
+        await axios.delete(`${API_URL}/cart/${item.cart_item_id}`, {
+          withCredentials: true,
+          data: { // For DELETE requests, use data to send payload
+            user_id: auth.user.user_id
+          }
+        });
+      } else {
+        // For guest users - handle locally
+        let cart = JSON.parse(localStorage.getItem('cart')) || [];
+        cart = cart.filter(i => i.variant_id !== item.variant_id);
+        localStorage.setItem('cart', JSON.stringify(cart));
+      }
+
+      dispatch(fetchCart()); // Refresh cart after removal
+    }
+);
 
 export const updateCartItemQuantity = createAsyncThunk('cart/updateCartItemQuantity', async ({ cart_item_id, quantity }, { dispatch, getState }) => {
   const { auth } = getState();

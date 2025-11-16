@@ -30,6 +30,7 @@ export default function AllProductsPage() {
     );
     const { isAuthenticated } = useSelector((state) => state.auth);
 
+    const tags = useSelector(state => state.products.tags || []);
 
 
     const [localLoading, setLocalLoading] = useState(true);

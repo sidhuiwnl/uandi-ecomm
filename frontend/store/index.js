@@ -8,6 +8,9 @@ import testimonialReducer from './slices/testimonialSlice';
 import reelReducer from './slices/reelSlice';
 import cartReducer from './slices/cartSlice';
 import addressReducer from './slices/addressSlice';
+import collectionReducer from './collectionsSlice';
+import couponReducer from './couponSlics';
+import ordersReducer from './ordersSlice';
 
 export const store = configureStore({
   reducer: {
@@ -20,5 +23,8 @@ export const store = configureStore({
     testimonials: testimonialReducer,
     reels: reelReducer,
     addresses: addressReducer,
+    collections: collectionReducer,
+    coupons: couponReducer,
+    orders: ordersReducer,
   },
 });

@@ -21,9 +21,13 @@ import {
   Package,
   List,
   Grid,
+  Layers,
+  Folder
 } from "lucide-react";
 import Image from "next/image";
 import { useSelector } from "react-redux";
+import {useDispatch} from "react-redux";
+import {fetchCollections} from "@/store/collectionsSlice";
 
 // Sidebar Context
 const SidebarContext = createContext({
@@ -179,7 +183,9 @@ function MenuItem({ item, isCollapsed, closeSidebar }) {
                       <subItem.icon
                           size={16}
                           className={`flex-shrink-0 transition-transform duration-200 ${
-                              isSubActive ? "scale-110 text-rose-600" : "group-hover:scale-105"
+                              isSubActive
+                                  ? "scale-110 text-rose-600"
+                                  : "group-hover:scale-105"
                           }`}
                       />
                       <span className="font-medium text-sm">{subItem.name}</span>
@@ -228,12 +234,22 @@ function MenuItem({ item, isCollapsed, closeSidebar }) {
 export default function Sidebar() {
   const { isOpen, isCollapsed, toggleSidebar, toggleCollapse, closeSidebar, isMounted } =
       useSidebar();
+  const dispatch = useDispatch();
 
   const { user } = useSelector((state) => state.auth);
+  const { items: collections } = useSelector((state) => state.collections);
+
+  console.log("collections",collections);
+
+  useEffect(() => {
+    dispatch(fetchCollections())
+  }, [dispatch]);
+
   const base = user?.role ? `/${user.role}` : "";
 
   const navItems = [
     { name: "Dashboard", icon: Home, href: `${base}/dashboard` },
+
     {
       name: "Products",
       icon: Box,
@@ -244,6 +260,7 @@ export default function Sidebar() {
         { name: "Categories", icon: Grid, href: `${base}/console/product-management/categories` },
       ],
     },
+
     {
       name: "Orders",
       icon: ShoppingBag,
@@ -253,9 +270,27 @@ export default function Sidebar() {
         { name: "Pending Orders", icon: Package, href: `${base}/console/order-management/pending` },
       ],
     },
+
+    // ⭐ DYNAMIC COLLECTIONS MENU
+    {
+      name: "Collections",
+      icon: Layers,
+      href: `${base}/console/collection-management/collections`,
+      subItems: [
+        ...(collections?.length > 0
+            ? collections.map((col) => ({
+              name: col.collection_name,
+              icon: Folder,
+              href: `${base}/console/collection-management/collections/${col.collection_id}`,
+            }))
+            : []),
+      ],
+    },
+
     { name: "Customers", icon: Users, href: `${base}/customers` },
     { name: "Payments", icon: CreditCard, href: `${base}/payments` },
     { name: "Promotions", icon: Tag, href: `${base}/promotions` },
+
     {
       name: "Content",
       icon: FileText,
@@ -268,6 +303,7 @@ export default function Sidebar() {
         { name: "Privacy Policy", icon: Package, href: `${base}/console/content-management/privacy-policy` },
       ],
     },
+
     { name: "Security Roles", icon: Shield, href: `${base}/system/security-roles` },
   ];
 
@@ -292,7 +328,7 @@ export default function Sidebar() {
         >
           <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="flex items-center justify-between p-3 min-h-[75px]">
+            <div className="flex items-center jusitfy-between p-3 min-h-[75px]">
               <div
                   className={`flex items-center justify-center gap-2 whitespace-nowrap overflow-hidden transition-all duration-300 ${
                       isCollapsed ? "lg:w-0 lg:opacity-0" : "w-auto opacity-100"
