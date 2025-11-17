@@ -1,5 +1,6 @@
 // backend/controllers/productController.js
 const productModel = require('../models/productModel');
+const pool = require("../config/database")
 
 const productController = {
   // Get all products
@@ -181,7 +182,7 @@ const productController = {
   updateProductImage: async (req, res) => {
   try {
     const { image_url, is_main } = req.body;
-    const [result] = await db.query(
+    const [result] = await pool.query(
       'UPDATE product_images SET image_url = ?, is_main = ? WHERE image_id = ?',
       [image_url, is_main, req.params.id]
     );

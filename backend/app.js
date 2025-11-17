@@ -6,6 +6,9 @@ const rateLimit = require('express-rate-limit');
 const User = require('./models/authModel');
 const cartRoutes = require('./routes/cartRoutes');
 const addressesRoutes = require('./routes/addressRoutes');
+const collectionRoutes = require('./routes/collections');
+const couponRoutes = require('./routes/couponRoutes');
+const orderRoutes = require('./routes/orderRoutes');
 
 const cors = require('cors');
 require('dotenv').config();
@@ -79,8 +82,11 @@ app.use('/blogs', blogRoutes);
 app.use('/testimonials', testimonialRoutes);
 app.use('/reels', productReelRoutes);
 app.use('/cart', cartRoutes);
+app.use("/orders",orderRoutes)
 
 app.use("/address",addressesRoutes)
+app.use("/collections",collectionRoutes)
+app.use("/coupons",couponRoutes)
 
 
 app.use((err, req, res, next) => {

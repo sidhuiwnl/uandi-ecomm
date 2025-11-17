@@ -289,7 +289,12 @@ export default function Sidebar() {
 
     { name: "Customers", icon: Users, href: `${base}/customers` },
     { name: "Payments", icon: CreditCard, href: `${base}/payments` },
-    { name: "Promotions", icon: Tag, href: `${base}/promotions` },
+    {
+      name: "Promotions",
+      icon: Tag, href: `${base}/promotions`,
+      subItems: [
+          {  name: "Coupons", icon: List, href: `${base}/promotion/coupons` },
+      ] },
 
     {
       name: "Content",

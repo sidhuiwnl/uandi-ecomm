@@ -84,10 +84,14 @@ const productModel = {
 
   // Update product
   updateProduct: async (id, data) => {
-    const { category_id, product_name, description, is_active } = data;
+    const { category_id, product_name, description, is_active, tag_id } = data;
+
+    // Convert empty string to NULL for tag_id
+    const processedTagId = tag_id === '' ? null : tag_id;
+
     const [result] = await pool.query(
-      'UPDATE products SET category_id = ?, product_name = ?, description = ?, is_active = ? WHERE product_id = ?',
-      [category_id, product_name, description, is_active, id]
+        'UPDATE products SET category_id = ?, product_name = ?, description = ?, is_active = ?, tag_id = ? WHERE product_id = ?',
+        [category_id, product_name, description, is_active, processedTagId, id]
     );
     return result;
   },
