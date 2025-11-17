@@ -20,8 +20,9 @@ import {validateCoupon,removeCoupon} from "@/store/couponSlics";
 import { createOrder } from "@/store/ordersSlice";
 import { clearCart } from "@/store/slices/cartSlice";
 import Swal from "sweetalert2";
+import AvailableCoupons from "@/components/AvailableCoupons";
 
-// Helper function to extract error message
+
 const getErrorMessage = (error) => {
     if (typeof error === 'string') return error;
     if (error?.message) return error.message;
@@ -378,7 +379,7 @@ export default function Page() {
                 dispatch(clearCart());
 
                 console.log('✅ Order created successfully:', result.order);
-                router.push('/checkout/payment');
+                // router.push('/checkout/payment');
             }
         } catch (error) {
             console.error('❌ Error creating order:', error);
@@ -634,7 +635,26 @@ export default function Page() {
                                                     )}
                                                 </button>
                                             </div>
+
                                         )}
+                                        <div className="mb-8">
+                                            <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
+                                                <Tag className="w-4 h-4" />
+                                                Available Coupons
+                                            </h3>
+
+                                            <AvailableCoupons
+                                                userId={localUser?.user_id}
+                                                collectionId={items[0]?.source_collection_id}
+                                                cartItems={items}
+                                                subtotal={subtotal}
+                                                appliedCoupon={appliedCoupon}
+                                                onCouponApplied={() => {
+                                                    // Optional: Any callback after coupon is applied
+                                                    console.log('Coupon applied successfully');
+                                                }}
+                                            />
+                                        </div>
 
                                         {couponError && (
                                             <p className="text-red-500 text-sm mt-2">{getErrorMessage(couponError)}</p>

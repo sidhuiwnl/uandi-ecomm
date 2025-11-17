@@ -14,8 +14,56 @@ const couponModel = {
         return rows[0] || null;
     },
 
-    createCoupon: async () => {
+    getCoupon: async () => {
+        const [rows] = await pool.query(
+            `SELECT * FROM coupons`
+        )
 
+        return rows;
+    },
+
+    createCoupon: async (data) => {
+        const sql = `
+            INSERT INTO coupons (
+                coupon_code, coupon_type, discount_type, discount_value,
+                max_discount_amount, min_order_amount, start_date, end_date,
+                is_active, total_usage_limit, per_user_limit
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+
+        const params = [
+            data.coupon_code,
+            data.coupon_type,
+            data.discount_type,
+            data.discount_value,
+            data.discount_type === "percentage" ? data.max_discount_amount : null,
+            data.min_order_amount,
+            data.start_date,
+            data.end_date,
+            data.is_active ? 1 : 0,
+            data.total_usage_limit || null,
+            data.per_user_limit || 1
+        ];
+
+        const [result] = await pool.query(sql, params);
+        return result;
+    },
+
+    mapCouponToCollections: async (couponId, collectionIds) => {
+        // Create placeholders for multiple values (?, ?), (?, ?), ...
+        const placeholders = collectionIds.map(() => '(?, ?)').join(', ');
+
+        // Flatten the array for the query parameters
+        const params = collectionIds.flatMap(collectionId => [couponId, collectionId]);
+
+        const sql = `
+        INSERT INTO coupon_collections (coupon_id, collection_id)
+        VALUES ${placeholders}
+    `;
+
+        const [result] = await pool.query(sql, params);
+        return result;
     },
 
     // Validate coupon against rules
@@ -297,56 +345,52 @@ const couponModel = {
 
         // 1) Sales coupons (global)
         const [salesCoupons] = await pool.query(`
-        SELECT * FROM coupons 
-        WHERE coupon_type = 'sales'
-        AND is_active = 1 
-        AND start_date <= NOW()
-        AND end_date >= NOW()
-    `);
+            SELECT * FROM coupons
+            WHERE coupon_type = 'sales'
+              AND is_active = 1
+              AND start_date <= NOW()
+              AND end_date >= NOW()
+        `);
         finalCoupons.push(...salesCoupons);
 
         // 2) User-specific coupons
         if (user_id) {
             const [userCoupons] = await pool.query(`
-            SELECT * FROM coupons 
-            WHERE coupon_type = 'user'
-            AND is_active = 1 
-            AND start_date <= NOW()
-            AND end_date >= NOW()
-            AND coupon_id IN (
-                SELECT coupon_id FROM user_coupons WHERE user_id = ?
-            )
-        `, [user_id]);
-
+                SELECT * FROM coupons
+                WHERE coupon_type = 'user'
+                  AND is_active = 1
+                  AND start_date <= NOW()
+                  AND end_date >= NOW()
+                  AND coupon_id IN (
+                    SELECT coupon_id FROM coupon_user_map WHERE user_id = ?
+                )
+            `, [user_id]);
             finalCoupons.push(...userCoupons);
         }
 
         // 3) Collection-based coupons
         if (collection_id) {
             const [collectionCoupons] = await pool.query(`
-            SELECT c.*
-            FROM coupons c
-            JOIN coupon_collections cc ON cc.coupon_id = c.coupon_id
-            WHERE cc.collection_id = ?
-            AND c.is_active = 1
-            AND c.start_date <= NOW()
-            AND c.end_date >= NOW()
-        `, [collection_id]);
-
+                SELECT c.*
+                FROM coupons c
+                         JOIN coupon_collections cc ON cc.coupon_id = c.coupon_id
+                WHERE cc.collection_id = ?
+                  AND c.is_active = 1
+                  AND c.start_date <= NOW()
+                  AND c.end_date >= NOW()
+            `, [collection_id]);
             finalCoupons.push(...collectionCoupons);
         }
 
         // Remove duplicates
         const unique = [];
         const used = new Set();
-
         for (let c of finalCoupons) {
             if (!used.has(c.coupon_id)) {
                 used.add(c.coupon_id);
                 unique.push(c);
             }
         }
-
         return unique;
     },
 };
