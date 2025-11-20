@@ -48,12 +48,27 @@ class User {
   }
 
   static async createGoogleUser(googleId, email, firstName, lastName, profilePictureUrl) {
-    const [result] = await pool.query(
-      'INSERT INTO users (google_id, email, first_name, last_name, profile_picture_url, role_id) VALUES (?, ?, ?, ?, ?, (SELECT role_id FROM roles WHERE role_name = "customer"))',
-      [googleId, email, firstName, lastName, profilePictureUrl]
-    );
-    return this.findByGoogleIdOrIdentifier(googleId);
-  }
+  const [result] = await pool.query(
+    `INSERT INTO users (
+        google_id, 
+        email, 
+        first_name, 
+        last_name, 
+        profile_picture_url,
+        last_login_at,
+        role_id
+     ) 
+     VALUES (
+        ?, ?, ?, ?, ?, NOW(),
+        (SELECT role_id FROM roles WHERE role_name = "customer")
+     )`,
+    [googleId, email, firstName, lastName, profilePictureUrl]
+  );
+
+  // return complete user object
+  return this.findByGoogleIdOrIdentifier(googleId);
+}
+
 
   static async createManualUser(email, phoneNumber, password, firstName, lastName) {
     const passwordHash = await bcrypt.hash(password, 10);
@@ -82,6 +97,37 @@ class User {
   static async updateRefreshToken(userId, refreshToken) {
     await pool.query('UPDATE users SET refresh_token = ? WHERE user_id = ?', [refreshToken, userId]);
   }
+
+  static async updateLastLogin(userId) {
+  return pool.query(
+    "UPDATE users SET last_login_at = NOW() WHERE user_id = ?",
+    [userId]
+  );
+}
+
+static async updateLastLogout(userId) {
+  return pool.query(
+    "UPDATE users SET last_logout_at = NOW() WHERE user_id = ?",
+    [userId]
+  );
+}
+
+static async createSession(userId, refreshToken) {
+    await pool.query('UPDATE users SET refresh_token = ?, last_login_at = NOW() WHERE user_id = ?', [refreshToken, userId]);
+  }
+
+
+
+static async clearSession(userId) {
+  await pool.query(
+    `UPDATE users 
+     SET refresh_token = NULL, 
+         last_logout_at = NOW()
+     WHERE user_id = ?`,
+    [userId]
+  );
+}
+
 }
 
 module.exports = User;

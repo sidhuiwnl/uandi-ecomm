@@ -104,7 +104,7 @@ exports.signup = async (req, res, next) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    res.status(201).json({ user: { user_id: user.user_id, email: user.email, first_name: user.first_name, last_name: user.last_name  } });
+    res.status(201).json({ user: { user_id: user.user_id, email: user.email, phone_number: user.phone_number, first_name: user.first_name, last_name: user.last_name  } });
   } catch (error) {
     next(error);
   }
@@ -132,7 +132,7 @@ exports.login = async (req, res, next) => {
       { expiresIn: '7d' }
     );
 
-    await User.updateRefreshToken(user.user_id, refreshToken);
+    await User.createSession(user.user_id, refreshToken);
 
     res.cookie('accessToken', accessToken, {
       httpOnly: true,
@@ -145,7 +145,7 @@ exports.login = async (req, res, next) => {
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    res.json({ user: { user_id: user.user_id, email: user.email, first_name: user.first_name, last_name: user.last_name, profile_picture_url: user.profile_picture_url, role: user.role_name,} });
+    res.json({ user: { user_id: user.user_id, email: user.email, phone_number: user.phone_number, first_name: user.first_name, last_name: user.last_name,  profile_picture_url: user.profile_picture_url, role: user.role_name,} });
   } catch (error) {
     next(error);
   }
@@ -222,13 +222,22 @@ exports.refreshToken = async (req, res, next) => {
 
 exports.logout = async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
+
   if (refreshToken) {
-    await User.updateRefreshToken(null, refreshToken); // Clear refresh token
+    // Find user by refresh token
+    const user = await User.findByRefreshToken(refreshToken);
+
+    if (user) {
+       await User.clearSession(user.user_id);
+    }
   }
+
   res.clearCookie('accessToken');
   res.clearCookie('refreshToken');
+
   res.json({ message: 'Logged out successfully' });
 };
+
 
 exports.verify = async (req, res, next) => {
   let accessToken = req.cookies.accessToken;
@@ -286,6 +295,7 @@ exports.verify = async (req, res, next) => {
       user: {
         user_id: user.user_id,
         email: user.email,
+        phone_number: user.phone_number,
         first_name: user.first_name,
         last_name: user.last_name,
         profile_picture_url: user.profile_picture_url,

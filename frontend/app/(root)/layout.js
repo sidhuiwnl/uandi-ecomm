@@ -1,6 +1,12 @@
+'use client';
 import { Geist, Geist_Mono } from "next/font/google";
 import "../globals.css";
 import Navbar from "@/components/Navbar";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchCart } from "@/store/slices/cartSlice";
+import { Car } from "lucide-react";
+import CartModal from "@/components/CartModal";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -12,13 +18,29 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+function CartInitializer() {
+  const dispatch = useDispatch();
+  const { isAuthenticated } = useSelector((state) => state.auth);
+
+  useEffect(() => {
+    dispatch(fetchCart());
+  }, [dispatch, isAuthenticated]);
+
+  return null;
+}
+
 export default function Layout({ children }) {
   return (
-    <div
-      className={`${geistSans.variable} ${geistMono.variable} font-sans bg-[#FCFBF5] text-gray-900`}
-    >
-      <Navbar />
-      <main>{children}</main>
-    </div>
+    <>
+      <CartInitializer />
+      <div
+        className={`${geistSans.variable} ${geistMono.variable} font-sans bg-[#FCFBF5] text-gray-900`}
+      >
+        <Navbar />
+        <main>{children}</main>
+        <CartModal />
+      </div>
+    </>
+    
   );
 }

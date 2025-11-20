@@ -8,7 +8,8 @@ class AdminUser {
         u.user_id, 
         u.first_name, 
         u.last_name, 
-        u.email, 
+        u.email,
+        u.phone_number,
         u.is_active, 
         u.created_at, 
         r.role_name

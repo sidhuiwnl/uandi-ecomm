@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { X, Mail, Lock, User, Eye, EyeOff, Loader2 } from 'lucide-react';
 import AuthForm from './AuthForm';
 
-export default function AuthModal({ isOpen, onClose }) {
+export default function AuthModal({ isOpen, onClose, redirectAfterAuth = null }) {
   const [mode, setMode] = useState('login');
   const [showPassword, setShowPassword] = useState(false);
   const modalRef = useRef(null);
@@ -75,7 +75,11 @@ export default function AuthModal({ isOpen, onClose }) {
 
         {/* Form Wrapper */}
         <div className="p-6 md:p-8">
-          <AuthForm mode={mode} />
+          <AuthForm
+            mode={mode}
+            redirectAfterAuth={redirectAfterAuth}
+            onAuthenticated={() => onClose()}
+          />
         </div>
 
         {/* Footer */}

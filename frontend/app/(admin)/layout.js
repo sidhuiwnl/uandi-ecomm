@@ -30,7 +30,7 @@ export default function AdminLayout({ children }) {
 
           {/* Scrollable Main Content */}
           <main className="flex-1 overflow-y-auto">
-            <div className="container mx-auto py-4">
+            <div className="container mx-auto p-6 py-4">
               {children}
             </div>
           </main>

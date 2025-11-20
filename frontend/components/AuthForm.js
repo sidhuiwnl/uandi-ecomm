@@ -3,11 +3,12 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDispatch } from 'react-redux';
-import { login, signup, forgotPassword } from '../store/authSlice';
+import { login, signup, forgotPassword } from '@/store/authSlice';
+import { mergeCarts } from '@/store/slices/cartSlice';
 import Swal from 'sweetalert2';
 import { Mail, Lock, User, Phone, Eye, EyeOff, Loader2 } from 'lucide-react';
 
-export default function AuthForm({ mode }) {
+export default function AuthForm({ mode, redirectAfterAuth = null, onAuthenticated }) {
   const dispatch = useDispatch();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -58,12 +59,18 @@ export default function AuthForm({ mode }) {
       if (mode === 'login') {
         const userData = await dispatch(login({ identifier: formData.identifier, password: formData.password })).unwrap();
         console.log('Logged in user data:', userData);
-        // Now check role
-        if (userData?.role === 'superadmin' || userData?.role === 'admin') {
+        // Merge any guest cart items into user's cart
+        try { await dispatch(mergeCarts()).unwrap(); } catch (mergeErr) { console.warn('Failed to merge local cart after login:', mergeErr); }
+
+        // Redirect priority: explicit redirectAfterAuth > role-based fallback
+        if (redirectAfterAuth) {
+          router.push(redirectAfterAuth);
+        } else if (userData?.role === 'superadmin' || userData?.role === 'admin') {
           router.push(`${userData?.role}/dashboard`);
         } else {
           router.push('/');
         }
+        if (onAuthenticated) onAuthenticated(userData);
       } else if (mode === 'signup') {
         await dispatch(
           signup({
@@ -75,7 +82,14 @@ export default function AuthForm({ mode }) {
             lastName: formData.lastName,
           })
         ).unwrap();
-        router.push('/dashboard');
+        // After signup, merge any guest cart items into the new user's cart
+        try { await dispatch(mergeCarts()).unwrap(); } catch (mergeErr) { console.warn('Failed to merge local cart after signup:', mergeErr); }
+        if (redirectAfterAuth) {
+          router.push(redirectAfterAuth);
+        } else {
+          router.push('/dashboard');
+        }
+        if (onAuthenticated) onAuthenticated();
       } else if (mode === 'forgot') {
         await dispatch(forgotPassword({ identifier: formData.identifier })).unwrap();
         Swal.fire({ icon: 'success', title: 'Check your email', text: 'Reset link sent!', confirmButtonColor: '#f59e0b' });
@@ -89,6 +103,10 @@ export default function AuthForm({ mode }) {
   };
 
  const handleGoogleLogin = () => {
+    // Persist redirect intent for Google OAuth round-trip
+    if (redirectAfterAuth) {
+      try { localStorage.setItem('postAuthRedirect', redirectAfterAuth); } catch (_) {}
+    }
     window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/auth/google`;
   };
 

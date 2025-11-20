@@ -1,108 +1,82 @@
-const db = require('../config/database');
+const pool = require('../config/database');
+const slugify = require('slugify');
 
 class Blog {
-    static async create(blogData) {
-        const { title, slug, excerpt, content, featured_image, author_name, status, published_at, meta_title, meta_description } = blogData;
-        
-        // Convert empty string to null for published_at
-        const publishedDate = published_at && published_at.trim() !== '' ? published_at : null;
-        
-        const query = `
-            INSERT INTO blogs (title, slug, excerpt, content, featured_image, author_name, status, published_at, meta_title, meta_description)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-        const [result] = await db.execute(query, [
-            title, 
-            slug, 
-            excerpt, 
-            content, 
-            featured_image, 
-            author_name, 
-            status, 
-            publishedDate, 
-            meta_title, 
-            meta_description
-        ]);
-        return result.insertId;
+  static async generateSlug(title) {
+    const base = slugify(title, { lower: true, strict: true });
+    const [rows] = await pool.query('SELECT slug FROM blogs WHERE slug LIKE ?', [`${base}%`]);
+    const count = rows.length;
+    return count === 0 ? base : `${base}-${count + 1}`;
+  }
+
+  static async create(data) {
+    const { title, content, excerpt, featured_image, author_id } = data;
+    const slug = await this.generateSlug(title);
+    const [result] = await pool.execute(
+      `INSERT INTO blogs (title, slug, content, excerpt, featured_image, author_id, status)
+       VALUES (?, ?, ?, ?, ?, ?, 'draft')`,
+      [title, slug, content, excerpt || null, featured_image || null, author_id || null]
+    );
+    return { id: result.insertId, slug, ...data };
+  }
+
+  static async update(id, data) {
+    const updates = [];
+    const values = [];
+
+    if (data.title) {
+      updates.push('title = ?');
+      values.push(data.title);
+      const slug = await this.generateSlug(data.title);
+      updates.push('slug = ?');
+      values.push(slug);
+      data.slug = slug;
     }
+    if (data.content !== undefined) { updates.push('content = ?'); values.push(data.content); }
+    if (data.excerpt !== undefined) { updates.push('excerpt = ?'); values.push(data.excerpt); }
+    if (data.featured_image !== undefined) { updates.push('featured_image = ?'); values.push(data.featured_image); }
+    if (data.status) { updates.push('status = ?'); values.push(data.status); }
 
-    static async findAll(filters = {}) {
-        let query = 'SELECT * FROM blogs WHERE 1=1';
-        const params = [];
+    if (updates.length === 0) return null;
 
-        if (filters.status) {
-            query += ' AND status = ?';
-            params.push(filters.status);
-        }
+    values.push(id);
+    const query = `UPDATE blogs SET ${updates.join(', ')}, updated_at = NOW() WHERE id = ?`;
+    await pool.execute(query, values);
+    return this.findById(id);
+  }
 
-        query += ' ORDER BY created_at DESC';
+  static async delete(id) {
+    await pool.execute('DELETE FROM blogs WHERE id = ?', [id]);
+    return true;
+  }
 
-        // Only add LIMIT/OFFSET if limit is provided and valid
-        if (filters.limit && !isNaN(filters.limit) && filters.limit > 0) {
-            const limit = parseInt(filters.limit);
-            const offset = filters.offset && !isNaN(filters.offset) ? parseInt(filters.offset) : 0;
-            
-            query += ' LIMIT ? OFFSET ?';
-            params.push(limit, offset);
-        }
-
-        const [rows] = await db.execute(query, params);
-        return rows;
+  static async findAll({ status } = {}) {
+    let query = 'SELECT * FROM blogs';
+    const params = [];
+    if (status) {
+      query += ' WHERE status = ?';
+      params.push(status);
     }
+    query += ' ORDER BY created_at DESC';
+    const [rows] = await pool.execute(query, params);
+    return rows;
+  }
 
-    static async findById(id) {
-        const query = 'SELECT * FROM blogs WHERE id = ?';
-        const [rows] = await db.execute(query, [id]);
-        return rows[0];
-    }
+  static async findById(id) {
+    const [rows] = await pool.execute('SELECT * FROM blogs WHERE id = ?', [id]);
+    return rows[0] || null;
+  }
 
-    static async findBySlug(slug) {
-        const query = 'SELECT * FROM blogs WHERE slug = ?';
-        const [rows] = await db.execute(query, [slug]);
-        return rows[0];
-    }
+  static async findBySlug(slug) {
+    const [rows] = await pool.execute('SELECT * FROM blogs WHERE slug = ? AND status = "published"', [slug]);
+    return rows[0] || null;
+  }
 
-    static async update(id, blogData) {
-        const fields = [];
-        const values = [];
-
-        Object.keys(blogData).forEach(key => {
-            if (blogData[key] !== undefined) {
-                // Handle published_at empty string
-                if (key === 'published_at' && blogData[key] === '') {
-                    fields.push(`${key} = ?`);
-                    values.push(null);
-                } else {
-                    fields.push(`${key} = ?`);
-                    values.push(blogData[key]);
-                }
-            }
-        });
-
-        values.push(id);
-        const query = `UPDATE blogs SET ${fields.join(', ')} WHERE id = ?`;
-        const [result] = await db.execute(query, values);
-        return result.affectedRows;
-    }
-
-    static async delete(id) {
-        const query = 'DELETE FROM blogs WHERE id = ?';
-        const [result] = await db.execute(query, [id]);
-        return result.affectedRows;
-    }
-
-    static async count(filters = {}) {
-        let query = 'SELECT COUNT(*) as total FROM blogs WHERE 1=1';
-        const params = [];
-
-        if (filters.status) {
-            query += ' AND status = ?';
-            params.push(filters.status);
-        }
-
-        const [rows] = await db.execute(query, params);
-        return rows[0].total;
-    }
+  static async toggleHide(id, hide = true) {
+    const status = hide ? 'hidden' : 'published';
+    await pool.execute('UPDATE blogs SET status = ? WHERE id = ?', [status, id]);
+    return this.findById(id);
+  }
 }
 
 module.exports = Blog;

@@ -5,6 +5,11 @@ const productController = require('../controllers/productController');
 
 // Product routes
 router.get('/', productController.getAllProducts);
+
+// Tag routes
+router.get("/tags", productController.getAllTags);
+
+
 router.get('/:id', productController.getProductById);
 router.post('/', productController.createProduct);
 router.put('/:id', productController.updateProduct);
@@ -17,9 +22,17 @@ router.patch('/variants/:id/stock', productController.updateStock);
 router.delete('/variants/:id', productController.deleteVariant);
 
 // Image routes
-router.post('/images', productController.addProductImage);
-router.delete('/images/:id', productController.deleteProductImage);
+router.post('/images', productController.addProductImage);  
 
 router.put('/images/:id', productController.updateProductImage);
+
+router.post('/upload-media', productController.uploadProductMedia);
+
+
+router.post('/replace-single-video', productController.replaceSingleVideo);
+router.post('/replace-single-image', productController.replaceSingleImage);
+
+
+
 
 module.exports = router;

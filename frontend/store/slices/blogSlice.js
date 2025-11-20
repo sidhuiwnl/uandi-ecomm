@@ -1,148 +1,79 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API = 'http://localhost:5000/blogs';
 
-export const fetchBlogs = createAsyncThunk(
-    'blogs/fetchBlogs',
-    async (filters = {}) => {
-        const params = new URLSearchParams();
-        
-        // Only add params that have values
-        if (filters.status) params.append('status', filters.status);
-        if (filters.limit) params.append('limit', filters.limit);
-        if (filters.page) params.append('page', filters.page);
-        
-        const queryString = params.toString();
-        const url = queryString ? `${API_URL}/blogs?${queryString}` : `${API_URL}/blogs`;
-        
-        const response = await axios.get(url);
-        return response.data;
-    }
-);
-
-export const fetchBlogById = createAsyncThunk(
-    'blogs/fetchBlogById',
-    async (id) => {
-        const response = await axios.get(`${API_URL}/blogs/${id}`);
-        return response.data.data;
-    }
-);
-
-export const fetchBlogBySlug = createAsyncThunk(
-    'blogs/fetchBlogBySlug',
-    async (slug) => {
-        const response = await axios.get(`${API_URL}/blogs/slug/${slug}`);
-        return response.data.data;
-    }
-);
-
-export const createBlog = createAsyncThunk(
-    'blogs/createBlog',
-    async (blogData, { rejectWithValue }) => {
-        try {
-            const response = await axios.post(`${API_URL}/blogs`, blogData);
-            return response.data.data;
-        } catch (error) {
-            return rejectWithValue(error.response.data);
-        }
-    }
-);
-
-export const updateBlog = createAsyncThunk(
-    'blogs/updateBlog',
-    async ({ id, blogData }, { rejectWithValue }) => {
-        try {
-            const response = await axios.put(`${API_URL}/blogs/${id}`, blogData);
-            return response.data.data;
-        } catch (error) {
-            return rejectWithValue(error.response.data);
-        }
-    }
-);
-
-export const deleteBlog = createAsyncThunk(
-    'blogs/deleteBlog',
-    async (id) => {
-        await axios.delete(`${API_URL}/blogs/${id}`);
-        return id;
-    }
-);
-
-const blogSlice = createSlice({
-    name: 'blogs',
-    initialState: {
-        blogs: [],
-        currentBlog: null,
-        loading: false,
-        error: null,
-        pagination: null,
-    },
-    reducers: {
-        clearCurrentBlog: (state) => {
-            state.currentBlog = null;
-        },
-        clearError: (state) => {
-            state.error = null;
-        },
-    },
-    extraReducers: (builder) => {
-        builder
-            // Fetch blogs
-            .addCase(fetchBlogs.pending, (state) => {
-                state.loading = true;
-            })
-            .addCase(fetchBlogs.fulfilled, (state, action) => {
-                state.loading = false;
-                state.blogs = action.payload.data;
-                state.pagination = action.payload.pagination || null;
-            })
-            .addCase(fetchBlogs.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.error.message;
-            })
-            // Fetch blog by ID
-            .addCase(fetchBlogById.pending, (state) => {
-                state.loading = true;
-            })
-            .addCase(fetchBlogById.fulfilled, (state, action) => {
-                state.loading = false;
-                state.currentBlog = action.payload;
-            })
-            .addCase(fetchBlogById.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.error.message;
-            })
-            // Fetch blog by slug
-            .addCase(fetchBlogBySlug.pending, (state) => {
-                state.loading = true;
-            })
-            .addCase(fetchBlogBySlug.fulfilled, (state, action) => {
-                state.loading = false;
-                state.currentBlog = action.payload;
-            })
-            .addCase(fetchBlogBySlug.rejected, (state, action) => {
-                state.loading = false;
-                state.error = action.error.message;
-            })
-            // Create blog
-            .addCase(createBlog.fulfilled, (state, action) => {
-                state.blogs.unshift(action.payload);
-            })
-            // Update blog
-            .addCase(updateBlog.fulfilled, (state, action) => {
-                const index = state.blogs.findIndex(blog => blog.id === action.payload.id);
-                if (index !== -1) {
-                    state.blogs[index] = action.payload;
-                }
-                state.currentBlog = action.payload;
-            })
-            // Delete blog
-            .addCase(deleteBlog.fulfilled, (state, action) => {
-                state.blogs = state.blogs.filter(blog => blog.id !== action.payload);
-            });
-    },
+export const fetchBlogs = createAsyncThunk('blog/fetchAll', async ({ status } = {}) => {
+  const url = status ? `${API}?status=${status}` : API;
+  const res = await fetch(url);
+  return res.json();
 });
 
-export const { clearCurrentBlog, clearError } = blogSlice.actions;
+export const createBlog = createAsyncThunk('blog/create', async (data, { getState }) => {
+  const token = localStorage.getItem('token');
+  console.log('Creating blog with data:', data);
+  const res = await fetch(API, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+});
+
+export const updateBlog = createAsyncThunk('blog/update', async ({ id, ...data }, { getState }) => {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${API}/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+});
+
+export const deleteBlog = createAsyncThunk('blog/delete', async (id) => {
+  const token = localStorage.getItem('token');
+  await fetch(`${API}/${id}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return id;
+});
+
+export const toggleHide = createAsyncThunk('blog/toggleHide', async ({ id, hide }) => {
+  const token = localStorage.getItem('token');
+  const res = await fetch(`${API}/${id}/hide`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ hide }),
+  });
+  return res.json();
+});
+
+const blogSlice = createSlice({
+  name: 'blog',
+  initialState: { list: [], current: null, loading: false, error: null },
+  reducers: {
+    clearCurrent: (state) => { state.current = null; },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchBlogs.pending, (state) => { state.loading = true; })
+      .addCase(fetchBlogs.fulfilled, (state, action) => {
+        state.loading = false;
+        state.list = action.payload;
+      })
+      .addCase(createBlog.fulfilled, (state, action) => {
+        state.list.unshift(action.payload);
+      })
+      .addCase(updateBlog.fulfilled, (state, action) => {
+        const idx = state.list.findIndex(b => b.id === action.payload.id);
+        if (idx !== -1) state.list[idx] = action.payload;
+        state.current = action.payload;
+      })
+      .addCase(deleteBlog.fulfilled, (state, action) => {
+        state.list = state.list.filter(b => b.id !== action.payload);
+      });
+  },
+});
+
+export const { clearCurrent } = blogSlice.actions;
 export default blogSlice.reducer;

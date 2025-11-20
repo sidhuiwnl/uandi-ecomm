@@ -1,8 +1,8 @@
-export default function RoleCard({ title, value }) {
+export default function RoleCard({ title, value, bgColor, textColor }) {
   return (
-    <div className="p-4 border rounded-xl text-center bg-white shadow-sm">
-      <div className="text-2xl font-bold">{value}</div>
-      <p className="text-gray-500">{title}</p>
+    <div className={`p-4 sm:p-6 rounded-2xl text-center shadow-sm hover:shadow-md transition-shadow ${bgColor}`}>
+      <div className={`text-3xl sm:text-4xl font-bold ${textColor}`}>{value}</div>
+      <p className="text-gray-600 text-xs sm:text-sm mt-2 font-medium">{title}</p>
     </div>
   );
 }

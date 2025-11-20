@@ -59,6 +59,17 @@ export const deleteProduct = createAsyncThunk(
   }
 );
 
+export const deleteVariant = createAsyncThunk(
+  'products/deleteVariant',
+  async ({  variantId }) => {
+    const response = await fetch(`${API_URL}/products/variants/${variantId}`, {
+      method: 'DELETE'
+    });
+    const data = await response.json();
+    return { variantId, ...data };
+  }
+);
+
 export const updateStock = createAsyncThunk(
   'products/updateStock',
   async ({ variantId, stock }) => {
@@ -71,6 +82,29 @@ export const updateStock = createAsyncThunk(
     return data;
   }
 );
+
+export const updateVariant = createAsyncThunk(
+  'products/updateVariant',
+  async ({ productId, variantId, variantData }) => {
+    const response = await fetch(`${API_URL}/products/${productId}/variants/${variantId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(variantData)
+    });
+    const data = await response.json();
+    return data;
+  }
+);
+
+
+export const getAllTags = createAsyncThunk(
+    'products/tags',
+    async () => {
+        const response = await fetch(`${API_URL}/products/tags`);
+        const data = await response.json();
+        return data.data;
+    }
+)
 
 const productsSlice = createSlice({
   name: 'products',
@@ -103,9 +137,35 @@ const productsSlice = createSlice({
       })
       .addCase(deleteProduct.fulfilled, (state, action) => {
         state.products = state.products.filter(p => p.product_id !== action.payload.id);
-      });
+      })
+      .addCase(deleteVariant.fulfilled, (state, action) => {
+        if (state.selectedProduct) {
+          state.selectedProduct.variants = state.selectedProduct.variants.filter(v => v.id !== action.payload.variantId);
+        }
+      })
+      .addCase(updateVariant.fulfilled, (state, action) => {
+        if (state.selectedProduct) {
+          const index = state.selectedProduct.variants.findIndex(v => v.id === action.payload.data.id);
+          if (index !== -1) {
+            state.selectedProduct.variants[index] = action.payload.data;
+          }
+        }
+      })
+        .addCase(getAllTags.pending, (state) => {
+            state.loading = true;
+        })
+        .addCase(getAllTags.fulfilled, (state, action) => {
+            state.loading = false;
+            state.tags = action.payload;
+        })
+        .addCase(getAllTags.rejected, (state, action) => {
+            state.loading = false;
+            state.error = action.error.message;
+        });
+
   }
 });
 
 export const { clearSelectedProduct } = productsSlice.actions;
+export const selectSelectedProduct = (state) => state.products.selectedProduct;
 export default productsSlice.reducer;

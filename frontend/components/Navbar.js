@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+
 import Link from 'next/link';
+
 import {
   Search,
   Heart,
@@ -10,11 +12,24 @@ import {
   Menu,
   X,
 } from 'lucide-react';
+
 import AuthModal from './AuthModal'; // <-- new modal component
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { useSelector, useDispatch } from "react-redux";
+import { verifyUser, logout, refreshToken } from "@/store/authSlice";
+import { openCart } from '@/store/slices/cartSlice';
+
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+
+   const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const dispatch = useDispatch();
+    const router = useRouter();
+    const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
+    const { items } = useSelector((state) => state.cart);
 
   const navLinks = [
     { name: 'Home', href: '/' },
@@ -24,6 +39,42 @@ export default function Navbar() {
     { name: 'About', href: '/about' },
     { name: 'Contact', href: '/contact' },
   ];
+
+  useEffect(() => {
+    // Don't verify if we're logging out
+    if (!isLoggingOut &&!isAuthenticated && !loading) {
+      dispatch(verifyUser())
+        .unwrap()
+        .catch((error) => {
+          // console.error("Verify user error on dashboard:", error);
+          if (error === "Invalid access token") {
+            dispatch(refreshToken())
+              .unwrap()
+              .then(() => dispatch(verifyUser()))
+              .catch(() => router.push("/"));
+          } 
+          // else {
+          //   router.push("/");
+          // }
+        });
+    }
+  }, []);
+
+  const handleLogout = (e) => {
+    e.stopPropagation();
+    // setDropdownOpen(false);
+    setIsLoggingOut(true); // Set flag before logout
+  
+    dispatch(logout())
+      .unwrap()
+      .then(() => {
+        router.push("/");
+      })
+      .catch(() => {
+        router.push("/");
+      });
+  };
+  
 
   return (
     <>
@@ -59,12 +110,18 @@ export default function Navbar() {
           <div className="hidden md:flex items-center space-x-5 text-gray-800">
             <Search className="w-5 h-5 cursor-pointer hover:text-black" />
             <Heart className="w-5 h-5 cursor-pointer hover:text-black" />
-            <div className="relative cursor-pointer hover:text-black">
-              <ShoppingBag className="w-5 h-5" />
-              <span className="absolute -top-2 -right-2 bg-black text-white text-[10px] rounded-full px-[5px]">
-                3
-              </span>
-            </div>
+            <button
+                  aria-label="Cart"
+                  className="relative hover:text-black transition"
+                  onClick={() => dispatch(openCart())}
+              >
+                <ShoppingBag className="w-5 h-5" />
+                {items.length > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-black text-white text-[10px] rounded-full px-[5px]">
+                    {items.length}
+                  </span>
+                )}
+              </button>
 
             {/* LOGIN BUTTON */}
             <button
@@ -74,6 +131,12 @@ export default function Navbar() {
               <User className="w-4 h-4" />
               <span>Login</span>
             </button>
+             <button 
+               onClick={handleLogout}
+               className='cursor-pointer'
+              >
+                Logout
+              </button>
           </div>
 
           {/* Mobile Menu Button */}
@@ -103,7 +166,7 @@ export default function Navbar() {
             <div className="flex items-center space-x-4 mt-4">
               <Search className="w-5 h-5" />
               <Heart className="w-5 h-5" />
-              <ShoppingBag className="w-5 h-5" />
+              <ShoppingBag className="w-5 h-5 text-gray-700" onClick={() => dispatch(openCart())}/>
               <button
                 onClick={() => {
                   setAuthModalOpen(true);
@@ -113,6 +176,12 @@ export default function Navbar() {
               >
                 <User className="w-4 h-4" />
                 <span>Login</span>
+              </button>
+
+              <button 
+               onClick={handleLogout}
+              >
+                Logout
               </button>
             </div>
           </div>

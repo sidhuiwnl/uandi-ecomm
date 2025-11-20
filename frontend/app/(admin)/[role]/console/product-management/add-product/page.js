@@ -1,13 +1,12 @@
-// frontend/app/(admin)/product-management/add-product/page.js
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useParams, useRouter } from 'next/navigation';
-import { createProduct } from '@/store/productsSlice';
+import { createProduct, getAllTags } from '@/store/productsSlice';
 import { fetchCategories } from '@/store/categoriesSlice';
 import Swal from 'sweetalert2';
-import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, TrashIcon, PhotoIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
@@ -16,16 +15,19 @@ export default function AddProductPage() {
   const dispatch = useDispatch();
   const router = useRouter();
   const { role } = useParams();
+
   const { categories } = useSelector(state => state.categories);
-  
+  const tags = useSelector(state => state.products.tags || []);
+
   const [formData, setFormData] = useState({
     product_name: '',
     category_id: '',
+    tag_id: '',
     description: '',
     is_active: true
   });
 
-  // Variants with per-variant images
+  // Variants with file objects for images and video
   const [variants, setVariants] = useState([{
     variant_name: '',
     sku: '',
@@ -36,11 +38,17 @@ export default function AddProductPage() {
     stock: 0,
     weight: '',
     unit: 'kg',
-    images: ['']
+    imageFiles: [], // Array of File objects (max 4)
+    imagePreviews: [], // Array of preview URLs
+    videoFile: null, // Single File object
+    videoPreview: null // Single preview URL
   }]);
+
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     dispatch(fetchCategories());
+    dispatch(getAllTags());
   }, [dispatch]);
 
   const handleInputChange = (e) => {
@@ -51,42 +59,205 @@ export default function AddProductPage() {
     }));
   };
 
+   const calculateFinalPrice = (v) => {
+          if (!v?.price) return 0;
+          const price = parseFloat(v.price);
+          const gst = parseFloat(v.gst_percentage);
+          return v.gst_included ? price : price + (price * gst) / 100;
+      };
+
   // Variant helpers
   const addVariant = () => {
     setVariants(vs => ([...vs, {
       variant_name: '', sku: '', mrp_price: '', price: '',
       gst_percentage: 18, gst_included: false, stock: 0,
-      weight: '', unit: 'kg', images: ['']
+      weight: '', unit: 'kg',
+      imageFiles: [],
+      imagePreviews: [],
+      videoFile: null,
+      videoPreview: null
     }]));
   };
 
   const removeVariant = (index) => {
-    setVariants(vs => vs.length > 1 ? vs.filter((_, i) => i !== index) : vs);
+    if (variants.length <= 1) return;
+    
+    // Cleanup preview URLs
+    const variant = variants[index];
+    variant.imagePreviews.forEach(url => URL.revokeObjectURL(url));
+    if (variant.videoPreview) URL.revokeObjectURL(variant.videoPreview);
+    
+    setVariants(vs => vs.filter((_, i) => i !== index));
   };
 
   const handleVariantChange = (index, field, value) => {
     setVariants(vs => vs.map((v, i) => i === index ? { ...v, [field]: value } : v));
   };
 
-  const handleVariantImageChange = (vIndex, imgIndex, value) => {
+  // Handle image file selection (max 4)
+  const handleImageSelect = (vIndex, e) => {
+    const files = Array.from(e.target.files);
+    const variant = variants[vIndex];
+    
+    // Limit to 4 images total
+    const availableSlots = 4 - variant.imageFiles.length;
+    const filesToAdd = files.slice(0, availableSlots);
+    
+    if (files.length > availableSlots) {
+      Swal.fire({
+        title: 'Too many images',
+        text: `You can only upload ${availableSlots} more image(s). Maximum is 4 images per variant.`,
+        icon: 'warning',
+        confirmButtonColor: '#ec4899'
+      });
+    }
+
+    // Validate file types
+    const validFiles = filesToAdd.filter(file => file.type.startsWith('image/'));
+    if (validFiles.length !== filesToAdd.length) {
+      Swal.fire({
+        title: 'Invalid file type',
+        text: 'Please select only image files',
+        icon: 'error',
+        confirmButtonColor: '#ec4899'
+      });
+    }
+
+    // Create preview URLs
+    const newPreviews = validFiles.map(file => URL.createObjectURL(file));
+    
     setVariants(vs => vs.map((v, i) => {
       if (i !== vIndex) return v;
-      const imgs = [...v.images];
-      imgs[imgIndex] = value;
-      return { ...v, images: imgs };
+      return {
+        ...v,
+        imageFiles: [...v.imageFiles, ...validFiles],
+        imagePreviews: [...v.imagePreviews, ...newPreviews]
+      };
+    }));
+
+    // Clear input
+    e.target.value = '';
+  };
+
+  // Remove single image
+  const removeImage = (vIndex, imgIndex) => {
+    setVariants(vs => vs.map((v, i) => {
+      if (i !== vIndex) return v;
+      
+      // Revoke preview URL
+      URL.revokeObjectURL(v.imagePreviews[imgIndex]);
+      
+      return {
+        ...v,
+        imageFiles: v.imageFiles.filter((_, ii) => ii !== imgIndex),
+        imagePreviews: v.imagePreviews.filter((_, ii) => ii !== imgIndex)
+      };
     }));
   };
 
-  const addVariantImageField = (vIndex) => {
-    setVariants(vs => vs.map((v, i) => i === vIndex ? { ...v, images: [...v.images, ''] } : v));
-  };
+  // Handle video file selection (max 1)
+  const handleVideoSelect = (vIndex, e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  const removeVariantImageField = (vIndex, imgIndex) => {
+    // Validate file type
+    if (!file.type.startsWith('video/')) {
+      Swal.fire({
+        title: 'Invalid file type',
+        text: 'Please select a video file',
+        icon: 'error',
+        confirmButtonColor: '#ec4899'
+      });
+      e.target.value = '';
+      return;
+    }
+
+    // Check file size (200MB limit as per backend)
+    if (file.size > 200 * 1024 * 1024) {
+      Swal.fire({
+        title: 'File too large',
+        text: 'Video must be less than 200MB',
+        icon: 'error',
+        confirmButtonColor: '#ec4899'
+      });
+      e.target.value = '';
+      return;
+    }
+
+    const variant = variants[vIndex];
+    
+    // Revoke old preview if exists
+    if (variant.videoPreview) {
+      URL.revokeObjectURL(variant.videoPreview);
+    }
+
+    const preview = URL.createObjectURL(file);
+    
     setVariants(vs => vs.map((v, i) => {
       if (i !== vIndex) return v;
-      if (v.images.length <= 1) return v;
-      return { ...v, images: v.images.filter((_, ii) => ii !== imgIndex) };
+      return {
+        ...v,
+        videoFile: file,
+        videoPreview: preview
+      };
     }));
+
+    // Clear input
+    e.target.value = '';
+  };
+
+  // Remove video
+  const removeVideo = (vIndex) => {
+    setVariants(vs => vs.map((v, i) => {
+      if (i !== vIndex) return v;
+      
+      // Revoke preview URL
+      if (v.videoPreview) URL.revokeObjectURL(v.videoPreview);
+      
+      return {
+        ...v,
+        videoFile: null,
+        videoPreview: null
+      };
+    }));
+  };
+
+  // Upload media files for a variant
+  const uploadVariantMedia = async (vIndex) => {
+    const variant = variants[vIndex];
+    
+    if (variant.imageFiles.length === 0 && !variant.videoFile) {
+      return { images: [], video: null };
+    }
+
+    const formData = new FormData();
+
+    // Append images (max 4)
+    variant.imageFiles.forEach((file, index) => {
+      formData.append(`images[${index}]`, file);
+    });
+
+    // Append video (only 1)
+    if (variant.videoFile) {
+      formData.append('video', variant.videoFile);
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/products/upload-media`, {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to upload media');
+      }
+
+      return result.data; // { images: [...urls], video: url }
+    } catch (error) {
+      throw new Error(`Media upload failed: ${error.message}`);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -102,25 +273,32 @@ export default function AddProductPage() {
       return;
     }
 
-    try {
-      // Basic validation for at least one variant
-      if (!variants.length || !variants[0].variant_name) {
-        await Swal.fire({
-          title: 'Missing variant',
-          text: 'Please add at least one variant with a name.',
-          icon: 'warning',
-          confirmButtonColor: '#ec4899'
-        });
-        return;
-      }
+    // Validate at least one variant
+    if (!variants.length || !variants[0].variant_name) {
+      await Swal.fire({
+        title: 'Missing variant',
+        text: 'Please add at least one variant with a name.',
+        icon: 'warning',
+        confirmButtonColor: '#ec4899'
+      });
+      return;
+    }
 
+    setUploading(true);
+
+    try {
       // Create product
       const productResult = await dispatch(createProduct(formData)).unwrap();
       const productId = productResult.data.product_id;
 
-      // Create variants and their images
+      // Create variants with media
       for (let vIndex = 0; vIndex < variants.length; vIndex++) {
         const v = variants[vIndex];
+        
+        // Upload media files first
+        const mediaUrls = await uploadVariantMedia(vIndex);
+
+        // Create variant
         const variantPayload = {
           product_id: productId,
           variant_name: v.variant_name,
@@ -139,17 +317,16 @@ export default function AddProductPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(variantPayload)
         });
+        
         const variantJson = await variantRes.json();
         if (!variantJson?.success) {
           throw new Error(variantJson?.message || 'Failed to create variant');
         }
         const variantId = variantJson.data.variant_id;
 
-        // Attach images to this variant
-        const imgs = Array.isArray(v.images) ? v.images : [];
-        for (let i = 0; i < imgs.length; i++) {
-          const url = imgs[i];
-          if (!url) continue;
+        // Save image URLs to database
+        for (let i = 0; i < mediaUrls.images.length; i++) {
+          const url = mediaUrls.images[i];
           await fetch(`${API_URL}/products/images`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -157,11 +334,33 @@ export default function AddProductPage() {
               product_id: productId,
               variant_id: variantId,
               image_url: url,
-              is_main: vIndex === 0 && i === 0 // first image of first variant as main
+              is_main: vIndex === 0 && i === 0, // First image of first variant as main
+              is_video: 0
+            })
+          });
+        }
+
+        // Save video URL to database
+        if (mediaUrls.video) {
+          await fetch(`${API_URL}/products/images`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              product_id: productId,
+              variant_id: variantId,
+              image_url: mediaUrls.video,
+              is_main: 0,
+              is_video: 1
             })
           });
         }
       }
+
+      // Cleanup all preview URLs
+      variants.forEach(v => {
+        v.imagePreviews.forEach(url => URL.revokeObjectURL(url));
+        if (v.videoPreview) URL.revokeObjectURL(v.videoPreview);
+      });
 
       await Swal.fire({
         title: 'Success!',
@@ -172,14 +371,27 @@ export default function AddProductPage() {
 
       router.push(`/${role}/console/product-management/product-details/${productId}`);
     } catch (error) {
+      console.error('Submit error:', error);
       Swal.fire({
         title: 'Error!',
         text: error?.message || 'Failed to create product',
         icon: 'error',
         confirmButtonColor: '#ec4899'
       });
+    } finally {
+      setUploading(false);
     }
   };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      variants.forEach(v => {
+        v.imagePreviews.forEach(url => URL.revokeObjectURL(url));
+        if (v.videoPreview) URL.revokeObjectURL(v.videoPreview);
+      });
+    };
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -187,10 +399,10 @@ export default function AddProductPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Add New Product</h1>
-          <p className="text-gray-500 mt-1">Create a new product and add variants with images</p>
+          <p className="text-gray-500 mt-1">Create a new product and add variants with images & video</p>
         </div>
         <Link href={`/${role}/console/product-management/all-products`}>
-          <button className="btn-secondary">Cancel</button>
+          <button className="btn-secondary" disabled={uploading}>Cancel</button>
         </Link>
       </div>
 
@@ -198,8 +410,8 @@ export default function AddProductPage() {
         {/* Basic Information */}
         <div className="card">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Basic Information</h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Product Name *
@@ -211,6 +423,7 @@ export default function AddProductPage() {
                 onChange={handleInputChange}
                 className="input-field"
                 required
+                disabled={uploading}
               />
             </div>
 
@@ -224,11 +437,32 @@ export default function AddProductPage() {
                 onChange={handleInputChange}
                 className="input-field"
                 required
+                disabled={uploading}
               >
                 <option value="">Select Category</option>
                 {categories.map(cat => (
                   <option key={cat.category_id} value={cat.category_id}>
                     {cat.category_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Tag
+              </label>
+              <select
+                name="tag_id"
+                value={formData.tag_id}
+                onChange={handleInputChange}
+                className="input-field"
+                disabled={uploading}
+              >
+                <option value="">Select Tag</option>
+                {tags.map(tag => (
+                  <option key={tag.tag_id} value={tag.tag_id}>
+                    {tag.tag_name}
                   </option>
                 ))}
               </select>
@@ -246,6 +480,7 @@ export default function AddProductPage() {
               rows="4"
               className="input-field"
               placeholder="Enter product description..."
+              disabled={uploading}
             ></textarea>
           </div>
 
@@ -256,6 +491,7 @@ export default function AddProductPage() {
               checked={formData.is_active}
               onChange={handleInputChange}
               className="w-4 h-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500"
+              disabled={uploading}
             />
             <label className="ml-2 text-sm font-medium text-gray-700">
               Active Product
@@ -267,98 +503,292 @@ export default function AddProductPage() {
         <div className="card">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-800">Variants</h2>
-            <button type="button" onClick={addVariant} className="btn-secondary flex items-center gap-2 text-sm">
+            <button 
+              type="button" 
+              onClick={addVariant} 
+              className="btn-secondary flex items-center gap-2 text-sm"
+              disabled={uploading}
+            >
               <PlusIcon className="w-4 h-4" /> Add Variant
             </button>
           </div>
 
           <div className="space-y-6">
             {variants.map((v, vIndex) => (
-              <div key={vIndex} className="rounded-lg border border-gray-200 p-4">
+              <div key={vIndex} className="rounded-lg border border-gray-200 p-4 bg-gray-50">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-medium text-gray-800">Variant {vIndex + 1}</h3>
                   {variants.length > 1 && (
-                    <button type="button" onClick={() => removeVariant(vIndex)} className="text-red-600 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg">
+                    <button 
+                      type="button" 
+                      onClick={() => removeVariant(vIndex)} 
+                      className="text-red-600 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg"
+                      disabled={uploading}
+                    >
                       <TrashIcon className="w-5 h-5" />
                     </button>
                   )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Variant Name *</label>
-                    <input type="text" value={v.variant_name} onChange={(e) => handleVariantChange(vIndex, 'variant_name', e.target.value)} className="input-field" required />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">SKU</label>
-                    <input type="text" value={v.sku} onChange={(e) => handleVariantChange(vIndex, 'sku', e.target.value)} className="input-field" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Stock</label>
-                    <input type="number" min="0" value={v.stock} onChange={(e) => handleVariantChange(vIndex, 'stock', e.target.value)} className="input-field" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">MRP Price</label>
-                    <input type="number" min="0" step="0.01" value={v.mrp_price} onChange={(e) => handleVariantChange(vIndex, 'mrp_price', e.target.value)} className="input-field" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Selling Price</label>
-                    <input type="number" min="0" step="0.01" value={v.price} onChange={(e) => handleVariantChange(vIndex, 'price', e.target.value)} className="input-field" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">GST %</label>
-                    <input type="number" min="0" step="0.01" value={v.gst_percentage} onChange={(e) => handleVariantChange(vIndex, 'gst_percentage', e.target.value)} className="input-field" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input id={`gstinc-${vIndex}`} type="checkbox" checked={v.gst_included} onChange={(e) => handleVariantChange(vIndex, 'gst_included', e.target.checked)} className="w-4 h-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500" />
-                    <label htmlFor={`gstinc-${vIndex}`} className="text-sm font-medium text-gray-700">Price includes GST</label>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Weight</label>
-                    <input type="text" value={v.weight} onChange={(e) => handleVariantChange(vIndex, 'weight', e.target.value)} className="input-field" placeholder="e.g., 1" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Unit</label>
-                    <select value={v.unit} onChange={(e) => handleVariantChange(vIndex, 'unit', e.target.value)} className="input-field">
-                      <option value="kg">kg</option>
-                      <option value="g">g</option>
-                      <option value="l">l</option>
-                      <option value="ml">ml</option>
-                      <option value="pc">pc</option>
-                    </select>
-                  </div>
-                </div>
+               {/* Variant Fields */}
+<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">Variant Name *</label>
+    <input 
+      type="text" 
+      value={v.variant_name} 
+      onChange={(e) => handleVariantChange(vIndex, 'variant_name', e.target.value)} 
+      className="input-field" 
+      required 
+      disabled={uploading}
+      placeholder="e.g., 50ml, 100g"
+    />
+  </div>
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">SKU</label>
+    <input 
+      type="text" 
+      value={v.sku} 
+      onChange={(e) => handleVariantChange(vIndex, 'sku', e.target.value)} 
+      className="input-field" 
+      disabled={uploading}
+      placeholder="Product SKU"
+    />
+  </div>
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">Stock *</label>
+    <input 
+      type="number" 
+      min="0" 
+      value={v.stock} 
+      onChange={(e) => handleVariantChange(vIndex, 'stock', e.target.value)} 
+      className="input-field"
+      required
+      disabled={uploading}
+    />
+  </div>
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">MRP Price (₹)</label>
+    <input 
+      type="number" 
+      min="0" 
+      step="0.01" 
+      value={v.mrp_price} 
+      onChange={(e) => handleVariantChange(vIndex, 'mrp_price', e.target.value)} 
+      className="input-field" 
+      disabled={uploading}
+      placeholder="0.00"
+    />
+  </div>
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">Selling Price (₹) *</label>
+    <input 
+      type="number" 
+      min="0" 
+      step="0.01" 
+      value={v.price} 
+      onChange={(e) => handleVariantChange(vIndex, 'price', e.target.value)} 
+      className="input-field"
+      required
+      disabled={uploading}
+      placeholder="0.00"
+    />
+  </div>
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">GST (%)</label>
+    <input 
+      type="number" 
+      min="0" 
+      step="0.01" 
+      value={v.gst_percentage} 
+      onChange={(e) => handleVariantChange(vIndex, 'gst_percentage', e.target.value)} 
+      className="input-field" 
+      disabled={uploading}
+    />
+  </div>
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">Weight/Volume</label>
+    <input 
+      type="text" 
+      value={v.weight} 
+      onChange={(e) => handleVariantChange(vIndex, 'weight', e.target.value)} 
+      className="input-field" 
+      placeholder="e.g., 50, 100" 
+      disabled={uploading}
+    />
+  </div>
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-2">Unit</label>
+    <select 
+      value={v.unit} 
+      onChange={(e) => handleVariantChange(vIndex, 'unit', e.target.value)} 
+      className="input-field"
+      disabled={uploading}
+    >
+      <option value="ml">ml</option>
+      <option value="g">g</option>
+      <option value="kg">kg</option>
+      <option value="l">l</option>
+      <option value="pcs">pcs</option>
+    </select>
+  </div>
+  <div className="flex items-end">
+    <div className="flex items-center gap-2 h-12">
+      <input 
+        id={`gstinc-${vIndex}`} 
+        type="checkbox" 
+        checked={v.gst_included} 
+        onChange={(e) => handleVariantChange(vIndex, 'gst_included', e.target.checked)} 
+        className="w-4 h-4 text-pink-600 border-gray-300 rounded focus:ring-pink-500" 
+        disabled={uploading}
+      />
+      <label htmlFor={`gstinc-${vIndex}`} className="text-sm font-medium text-gray-700">
+        GST Included in Price
+      </label>
+    </div>
+  </div>
+</div>
 
-                {/* Variant Images */}
-                <div className="mt-4">
+{v.price && (
+                            <div className="p-4 bg-pink-50 border border-pink-200 rounded-lg">
+                                <div className="flex justify-between text-gray-700">
+                                    <span>Final Price:</span>
+                                    <span className="font-bold text-pink-600">
+                                        ₹{calculateFinalPrice(v).toFixed(2)}
+                                    </span>
+                                </div>
+                                {v.mrp_price && (
+                                    <div className="flex items-center justify-between mt-1">
+                                        <span className="text-sm text-gray-500">Discount:</span>
+                                        <span className="text-sm text-green-600 font-medium">
+                                            {(((parseFloat(v.mrp_price) - calculateFinalPrice(v)) / parseFloat(v.mrp_price)) * 100).toFixed(1)}% off
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+
+                
+
+                {/* Images Section */}
+                <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200">
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <p className="text-sm font-medium text-gray-800">Variant Images</p>
-                      <p className="text-xs text-gray-500">First image of first variant becomes product main image</p>
+                      <p className="text-sm font-medium text-gray-800 flex items-center gap-2">
+                        <PhotoIcon className="w-5 h-5" />
+                        Product Images ({v.imageFiles.length}/4)
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {vIndex === 0 ? 'First image will be the main product image' : 'Upload up to 4 images'}
+                      </p>
                     </div>
-                    <button type="button" onClick={() => addVariantImageField(vIndex)} className="btn-secondary flex items-center gap-2 text-xs">
-                      <PlusIcon className="w-4 h-4" /> Add Image
-                    </button>
+                    {v.imageFiles.length < 4 && (
+                      <label className="btn-secondary flex items-center gap-2 text-xs cursor-pointer">
+                        <PhotoIcon className="w-4 h-4" />
+                        Add Images
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={(e) => handleImageSelect(vIndex, e)}
+                          className="hidden"
+                          disabled={uploading}
+                        />
+                      </label>
+                    )}
                   </div>
 
-                  <div className="space-y-3">
-                    {v.images.map((img, imgIndex) => (
-                      <div key={imgIndex} className="flex items-center gap-3">
-                        {img && (
-                          <img src={img} alt={`Variant ${vIndex + 1} - ${imgIndex + 1}`} className="w-16 h-16 rounded-lg object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-                        )}
-                        <input type="text" value={img} onChange={(e) => handleVariantImageChange(vIndex, imgIndex, e.target.value)} placeholder="Enter image URL" className="input-field flex-1" />
-                        {vIndex === 0 && imgIndex === 0 && (
-                          <span className="text-xs text-pink-600 font-medium whitespace-nowrap px-3 py-1 bg-pink-50 rounded-full">Main</span>
-                        )}
-                        {v.images.length > 1 && (
-                          <button type="button" onClick={() => removeVariantImageField(vIndex, imgIndex)} className="text-red-600 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg">
-                            <TrashIcon className="w-5 h-5" />
+                  {v.imagePreviews.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {v.imagePreviews.map((preview, imgIndex) => (
+                        <div key={imgIndex} className="relative group">
+                          <img
+                            src={preview}
+                            alt={`Preview ${imgIndex + 1}`}
+                            className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                          />
+                          {vIndex === 0 && imgIndex === 0 && (
+                            <span className="absolute top-2 left-2 text-xs text-white font-medium px-2 py-1 bg-pink-600 rounded-full">
+                              Main
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => removeImage(vIndex, imgIndex)}
+                            className="absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
+                            disabled={uploading}
+                          >
+                            <TrashIcon className="w-4 h-4" />
                           </button>
-                        )}
-                      </div>
-                    ))}
+                          <p className="text-xs text-gray-600 mt-1 truncate">
+                            {v.imageFiles[imgIndex]?.name}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {v.imagePreviews.length === 0 && (
+                    <div className="text-center py-8 text-gray-400">
+                      <PhotoIcon className="w-12 h-12 mx-auto mb-2" />
+                      <p className="text-sm">No images added yet</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Video Section */}
+                <div className="mt-4 p-4 bg-white rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <p className="text-sm font-medium text-gray-800 flex items-center gap-2">
+                        <VideoCameraIcon className="w-5 h-5" />
+                        Product Video {v.videoFile && '(1/1)'}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Upload one video (max 200MB)
+                      </p>
+                    </div>
+                    {!v.videoFile && (
+                      <label className="btn-secondary flex items-center gap-2 text-xs cursor-pointer">
+                        <VideoCameraIcon className="w-4 h-4" />
+                        Add Video
+                        <input
+                          type="file"
+                          accept="video/*"
+                          onChange={(e) => handleVideoSelect(vIndex, e)}
+                          className="hidden"
+                          disabled={uploading}
+                        />
+                      </label>
+                    )}
                   </div>
+
+                  {v.videoPreview ? (
+                    <div className="relative group">
+                      <video
+                        src={v.videoPreview}
+                        controls
+                        className="w-full max-h-64 rounded-lg border border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeVideo(vIndex)}
+                        className="absolute top-2 right-2 p-2 bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-700"
+                        disabled={uploading}
+                      >
+                        <TrashIcon className="w-5 h-5" />
+                      </button>
+                      <p className="text-xs text-gray-600 mt-2 truncate">
+                        {v.videoFile?.name} ({(v.videoFile?.size / (1024 * 1024)).toFixed(2)} MB)
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-400">
+                      <VideoCameraIcon className="w-12 h-12 mx-auto mb-2" />
+                      <p className="text-sm">No video added yet</p>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -368,12 +798,26 @@ export default function AddProductPage() {
         {/* Submit */}
         <div className="flex justify-end gap-4">
           <Link href={`/${role}/console/product-management/all-products`}>
-            <button type="button" className="btn-secondary">
+            <button type="button" className="btn-secondary" disabled={uploading}>
               Cancel
             </button>
           </Link>
-          <button type="submit" className="btn-primary">
-            Create Product
+          <button 
+            type="submit" 
+            className="btn-primary flex items-center gap-2"
+            disabled={uploading}
+          >
+            {uploading ? (
+              <>
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                </svg>
+                Creating Product...
+              </>
+            ) : (
+              'Create Product'
+            )}
           </button>
         </div>
       </form>

@@ -37,9 +37,14 @@ passport.use(
         const firstName = profile.name.givenName;
         const lastName = profile.name.familyName;
         const profilePictureUrl = profile.photos[0].value;
+      
 
         let user = await User.findByGoogleIdOrIdentifier(googleId);
-        if (user) return done(null, user);
+        if (user) {
+          // Update login timestamp for existing user
+          await User.updateLastLogin(user.user_id);
+          return done(null, user);
+        }
 
         user = await User.createGoogleUser(googleId, email, firstName, lastName, profilePictureUrl);
         return done(null, user);
@@ -73,14 +78,50 @@ const blogRoutes = require('./routes/blogRoutes');
 const testimonialRoutes = require('./routes/testimonialRoutes');
 const productReelRoutes = require('./routes/productReelRoutes');
 
+
 app.use('/blogs', blogRoutes);
+// app.use('/blogs', blogRoutes);
 app.use('/testimonials', testimonialRoutes);
 app.use('/reels', productReelRoutes);
+
+const videoRoutes = require('./routes/videoRoutes');
+app.use('/videos', videoRoutes);
+
+const uploadRoutes = require('./routes/uploadRoutes');
+app.use('/upload', uploadRoutes);
+
+const profileRoutes = require('./routes/profileRoutes');
+app.use('/user', profileRoutes);
+
+const reviewRoutes = require('./routes/reviewRoutes');
+app.use('/reviews', reviewRoutes);
+
+const reviewAdminRoutes = require('./routes/reviewAdminRoutes');
+app.use('/admin', reviewAdminRoutes);
+
+const collectionRoutes = require('./routes/collectionRoutes');
+app.use('/collections', collectionRoutes);
+
+const couponRoutes = require('./routes/couponRoutes');
+app.use('/coupons', couponRoutes);
+
+
+const cartRoutes = require('./routes/cartRoutes');
+const orderRoutes = require("./routes/orderRoutes");
+const addressesRoutes = require("./routes/addressRoutes");
+app.use('/cart', cartRoutes);
+app.use("/orders",orderRoutes)
+
+app.use("/address",addressesRoutes)
+
+
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Something went wrong!' });
 });
+
+
 
 app.listen(5000, () => console.log('Backend running on http://localhost:5000'));
 
