@@ -172,6 +172,6 @@ const orderModel = {
             throw error;
         }
     },
-};
+    };
 
 module.exports = orderModel;
