@@ -356,7 +356,7 @@ function randomKey() {
   return crypto.randomBytes(12).toString('hex');
 }
 
-// NEW: Upload up to 4 images + 1 compressed video per variant
+// NEW: Upload up to 4 images + 1 compressed video per variant (preserve order and wait for all)
 const uploadProductMedia = async (req, res) => {
   const busboy = Busboy({ headers: req.headers });
   const result = { images: [], video: null };
@@ -368,6 +368,10 @@ const uploadProductMedia = async (req, res) => {
   let videoOriginalPath = null;
   let videoMimeType = null;
   let videoSizeBytes = 0;
+  // Track image upload promises keyed by index to maintain order
+  const imagePromises = [];
+  const imageResults = {}; // { [index]: url }
+  let imagesStarted = 0;
 
   busboy.on('file', (fieldname, file, info) => {
     const { filename, mimeType } = info;
@@ -377,7 +381,15 @@ const uploadProductMedia = async (req, res) => {
 
     // === IMAGES (max 4) ===
     if (fieldname.startsWith('images')) {
-      if (result.images.length >= 4) return file.resume();
+      // Parse index from field name like images[0]
+      const match = fieldname.match(/images\[(\d+)\]/);
+      const idx = match ? parseInt(match[1], 10) : imagesStarted;
+
+      if (idx > 3 || imagesStarted >= 4) {
+        // Enforce max 4 images
+        return file.resume();
+      }
+      imagesStarted += 1;
 
       const key = `products/images/${Date.now()}-${randomKey()}-${path.basename(safeName, path.extname(safeName))}.webp`;
 
@@ -385,9 +397,11 @@ const uploadProductMedia = async (req, res) => {
         sharp().webp({ quality: 80 })
       );
 
-      uploadStreamToR2(uploadStream, key, 'image/webp')
-        .then(r => result.images.push(r.url))
-        .catch(err => console.error('Image upload failed:', err));
+      const p = uploadStreamToR2(uploadStream, key, 'image/webp')
+        .then(r => { imageResults[idx] = r.url; })
+        .catch(err => { console.error('Image upload failed:', err); imageResults[idx] = undefined; });
+
+      imagePromises.push(p);
     }
 
     // === VIDEO (only 1) ===
@@ -410,8 +424,17 @@ const uploadProductMedia = async (req, res) => {
 
   busboy.on('finish', async () => {
     try {
-      // Small delay to let image uploads finish
-      await new Promise(r => setTimeout(r, 1500));
+      // Wait for all image uploads to complete
+      if (imagePromises.length > 0) {
+        await Promise.allSettled(imagePromises);
+        // Build ordered images array (0..3) filtering out gaps/failed uploads
+        const maxIndex = Math.max(-1, ...Object.keys(imageResults).map(k => parseInt(k, 10)));
+        const ordered = [];
+        for (let i = 0; i <= Math.min(maxIndex, 3); i++) {
+          if (imageResults[i]) ordered.push(imageResults[i]);
+        }
+        result.images = ordered;
+      }
 
       // === Compress & Upload Video (Same as Reels) ===
       if (videoOriginalPath) {
@@ -440,7 +463,7 @@ const uploadProductMedia = async (req, res) => {
         message: 'Media uploaded successfully',
         data: result
       });
-
+      
     } catch (err) {
       console.error('uploadProductMedia error:', err);
       res.status(500).json({

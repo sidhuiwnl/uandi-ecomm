@@ -1,0 +1,303 @@
+[
+    {
+        "userSn": 1,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-01 09:38:02",
+        "recordDate": "2025-11-01",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 2,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-01 20:26:06",
+        "recordDate": "2025-11-01",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 3,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-02 10:01:10",
+        "recordDate": "2025-11-02",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 4,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-02 20:30:31",
+        "recordDate": "2025-11-02",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 5,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-03 09:36:38",
+        "recordDate": "2025-11-03",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 6,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-03 20:32:01",
+        "recordDate": "2025-11-03",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 7,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-04 10:04:00",
+        "recordDate": "2025-11-04",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 8,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-04 20:27:34",
+        "recordDate": "2025-11-04",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 9,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-05 09:48:20",
+        "recordDate": "2025-11-05",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 10,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-05 20:20:07",
+        "recordDate": "2025-11-05",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 11,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-06 09:00:39",
+        "recordDate": "2025-11-06",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 12,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-06 09:03:29",
+        "recordDate": "2025-11-06",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 13,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-06 09:53:43",
+        "recordDate": "2025-11-06",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 14,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-06 20:25:32",
+        "recordDate": "2025-11-06",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 15,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-07 10:05:21",
+        "recordDate": "2025-11-07",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 16,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-07 20:26:08",
+        "recordDate": "2025-11-07",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 17,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-08 10:11:36",
+        "recordDate": "2025-11-08",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 18,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-08 20:31:41",
+        "recordDate": "2025-11-08",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 19,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-09 09:48:33",
+        "recordDate": "2025-11-09",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 20,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-09 20:24:58",
+        "recordDate": "2025-11-09",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 21,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-10 09:44:12",
+        "recordDate": "2025-11-10",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 22,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-10 20:26:15",
+        "recordDate": "2025-11-10",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 23,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-11 09:48:02",
+        "recordDate": "2025-11-11",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 24,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-11 20:31:36",
+        "recordDate": "2025-11-11",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 25,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-12 09:40:14",
+        "recordDate": "2025-11-12",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 26,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-12 20:27:49",
+        "recordDate": "2025-11-12",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 27,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-13 10:05:28",
+        "recordDate": "2025-11-13",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 28,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-13 20:37:24",
+        "recordDate": "2025-11-13",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 29,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-14 09:57:12",
+        "recordDate": "2025-11-14",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 30,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-14 20:20:01",
+        "recordDate": "2025-11-14",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 31,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-15 09:48:15",
+        "recordDate": "2025-11-15",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 32,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-15 20:23:48",
+        "recordDate": "2025-11-15",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 33,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-16 09:42:06",
+        "recordDate": "2025-11-16",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 34,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-16 20:22:30",
+        "recordDate": "2025-11-16",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 35,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-17 09:43:59",
+        "recordDate": "2025-11-17",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 36,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-17 20:30:56",
+        "recordDate": "2025-11-17",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 37,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-18 09:43:44",
+        "recordDate": "2025-11-18",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 38,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-18 20:29:19",
+        "recordDate": "2025-11-18",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 39,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-19 09:29:44",
+        "recordDate": "2025-11-19",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 40,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-19 20:27:20",
+        "recordDate": "2025-11-19",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 41,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-20 09:51:26",
+        "recordDate": "2025-11-20",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 42,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-20 20:25:07",
+        "recordDate": "2025-11-20",
+        "ip": "192.168.4.201"
+    },
+    {
+        "userSn": 43,
+        "deviceUserId": "7513",
+        "recordTime": "2025-11-21 09:51:20",
+        "recordDate": "2025-11-21",
+        "ip": "192.168.4.201"
+    }
+]

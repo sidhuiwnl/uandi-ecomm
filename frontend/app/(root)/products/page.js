@@ -10,14 +10,13 @@ import {
     ArrowLeftIcon,
     CubeIcon,
     MagnifyingGlassIcon,
-    HeartIcon,
     FunnelIcon,
     XMarkIcon,
     ChevronDownIcon,
 } from '@heroicons/react/24/outline';
-import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { motion, AnimatePresence } from 'framer-motion';
 import ImageGalleryModal from '@/components/ImageGalleryModal';
+import ProductCard from '@/components/ProductCard';
 
 export default function AllProductsPage() {
     const dispatch = useDispatch();
@@ -401,120 +400,29 @@ export default function AllProductsPage() {
                         layout
                         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
                     >
-                        {sortedProducts.map((product) => {
-                            const lowestPrice =
-                                product.variants?.length > 0
-                                    ? Math.min(
-                                        ...product.variants.map((v) =>
-                                            parseFloat(v.final_price || v.price || 0)
-                                        )
-                                    )
-                                    : 0;
-                            const totalStock =
-                                product.variants?.reduce(
-                                    (sum, v) => sum + (v.stock || 0),
-                                    0
-                                ) || 0;
-                            const isInWishlist = wishlist.includes(product.product_id);
-
-                            return (
-                                <motion.div
-                                    key={product.product_id}
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    exit={{ opacity: 0, scale: 0.9 }}
-                                    className="bg-white rounded-2xl border border-gray-200 hover:border-gray-300 transition-all duration-300 cursor-pointer group relative overflow-hidden hover:shadow-lg"
-                                    onClick={() => router.push(`/products/${product.product_id}`)}
-                                >
-                                    {/* Wishlist Button */}
-                                    {isAuthenticated && (
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                toggleWishlist(product.product_id);
-                                            }}
-                                            className="absolute top-4 right-4 z-10 w-10 h-10 bg-white/90 backdrop-blur-sm hover:bg-white rounded-full flex items-center justify-center shadow-lg transition-all duration-200 hover:scale-110"
-                                        >
-                                            {isInWishlist ? (
-                                                <HeartIconSolid className="w-5 h-5 text-red-500" />
-                                            ) : (
-                                                <HeartIcon className="w-5 h-5 text-gray-600 hover:text-gray-900" />
-                                            )}
-                                        </button>
-                                    )}
-
-                                    {/* Image */}
-                                    <div className="relative aspect-square overflow-hidden bg-gray-100 rounded-t-2xl">
-                                        <img
-                                            src={product.main_image || '/placeholder.svg'}
-                                            alt={product.product_name}
-                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                        />
-                                        {totalStock < 10 && totalStock > 0 && (
-                                            <div className="absolute bottom-3 left-3">
-                                                <span className="bg-amber-500 text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-lg">
-                                                    Only {totalStock} left
-                                                </span>
-                                            </div>
-                                        )}
-                                        {totalStock === 0 && (
-                                            <div className="absolute bottom-3 left-3">
-                                                <span className="bg-gray-600 text-white text-xs font-medium px-3 py-1.5 rounded-full shadow-lg">
-                                                    Out of Stock
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Product Info */}
-                                    <div className="p-5">
-                                        <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">
-                                            {product.category?.category_name || 'Uncategorized'}
-                                        </p>
-                                        <h3 className="font-medium text-gray-900 line-clamp-2 mb-3 group-hover:text-gray-700 transition-colors">
-                                            {product.product_name}
-                                        </h3>
-                                        <div className="flex items-center justify-between mb-4">
-                                            <span className="text-xl font-light text-gray-900">
-                                                ₹{lowestPrice.toFixed(2)}
-                                            </span>
-                                            {product.variants?.length > 1 && (
-                                                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                                                    {product.variants.length} Variants
-                                                </span>
-                                            )}
-                                        </div>
-                                        <button
-                                            className="w-full py-3 px-4 text-sm font-medium text-gray-900 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-200 hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                                            disabled={totalStock === 0}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                const lowestVariant = product.variants.reduce(
-                                                    (lowest, current) => {
-                                                        const lowP = parseFloat(lowest.final_price || lowest.price || 0);
-                                                        const curP = parseFloat(current.final_price || current.price || 0);
-                                                        return curP < lowP ? current : lowest;
-                                                    }
-                                                );
-                                                const cartItem = {
-                                                    product_id: product.product_id,
-                                                    product_name: product.product_name,
-                                                    variant_id: lowestVariant.variant_id,
-                                                    variant_name: lowestVariant.variant_name,
-                                                    price: parseFloat(lowestVariant.final_price || lowestVariant.price),
-                                                    quantity: 1,
-                                                    main_image: product.main_image,
-                                                };
-                                                dispatch(addToCart(cartItem));
-                                                dispatch(openCart());
-                                            }}
-                                        >
-                                            {totalStock === 0 ? 'Out of Stock' : 'Add to Cart'}
-                                        </button>
-                                    </div>
-                                </motion.div>
-                            );
-                        })}
+                        {sortedProducts.map(product => (
+                            <ProductCard
+                                key={product.product_id}
+                                product={product}
+                                isAuthenticated={isAuthenticated}
+                                inWishlist={wishlist.includes(product.product_id)}
+                                onToggleWishlist={toggleWishlist}
+                                onNavigate={(id) => router.push(`/products/${id}`)}
+                                onAddToCart={({ product: p, variant }) => {
+                                    const cartItem = {
+                                        product_id: p.product_id,
+                                        product_name: p.product_name,
+                                        variant_id: variant.variant_id,
+                                        variant_name: variant.variant_name,
+                                        price: parseFloat(variant.final_price || variant.price),
+                                        quantity: 1,
+                                        main_image: p.main_image,
+                                    };
+                                    dispatch(addToCart(cartItem));
+                                    dispatch(openCart());
+                                }}
+                            />
+                        ))}
                     </motion.div>
                 ) : (
                     <div className="bg-white rounded-2xl border border-gray-200 p-16 text-center">
@@ -539,13 +447,13 @@ export default function AllProductsPage() {
                 )}
             </div>
 
-            {showImageGallery && selectedImages.length > 0 && (
+            {/* {showImageGallery && selectedImages.length > 0 && (
                 <ImageGalleryModal
                     images={selectedImages}
                     productName="Product Image"
                     onClose={() => setShowImageGallery(false)}
                 />
-            )}
+            )} */}
         </div>
     );
 }
