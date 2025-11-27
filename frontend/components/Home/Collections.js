@@ -35,15 +35,15 @@ const sections = [
 
 export default function Collections() {
   return (
-    <section className="w-full py-16 md:py-24">
+    <section id="collections" className="w-full py-16 md:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
 
          <div className="text-center mb-14">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#D8234B] mb-4 tracking-tight">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 mb-4 tracking-tight">
             Explore Our Collections
           </h2>
-          <p className="text-lg text-[#D8234B]/80 max-w-xl mx-auto">
+          <p className="text-lg text-gray-400 max-w-xl mx-auto">
             Discover curated skincare ranges designed for every age and concern.
           </p>
         </div>

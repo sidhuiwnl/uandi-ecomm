@@ -5,7 +5,7 @@ const KeyProduct = () => {
     <>
     <div>
       <div className="text-center mb-14">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#D8234B] mb-4 tracking-tight">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 mb-4 tracking-tight">
             “Our Little Swirl of Softness”
           </h2>
           </div>

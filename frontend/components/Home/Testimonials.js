@@ -51,10 +51,10 @@ export default function Testimonials() {
       <div className="max-w-7xl mx-auto px-6">
         {/* Header */}
         <div className="text-center mb-14">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#D8234B] mb-4 tracking-tight">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 mb-4 tracking-tight">
             Loved by real skin
           </h2>
-          <p className="text-lg text-[#D8234B]/80 max-w-xl mx-auto">
+          <p className="text-lg text-gray-400 max-w-xl mx-auto">
             Handwritten words from people who’ve welcomed U&amp;I Naturals into their everyday rituals.
           </p>
         </div>

@@ -9,6 +9,8 @@ import { addVideo, editVideo } from '@/store/slices/videoSlice';
 import { replaceVideo } from '@/store/slices/api/client';
 import { useRouter } from 'next/navigation';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
+
 export default function AddEditForm({ video, productId }) {
   const isEdit = !!video;
   const dispatch = useDispatch();
@@ -23,7 +25,7 @@ export default function AddEditForm({ video, productId }) {
   // minimal product list load (optional)
   const [products, setProducts] = useState([]);
   useEffect(() => {
-    fetch('http://localhost:5000/products').then(r => r.ok ? r.json() : []).then(setProducts).catch(()=>{});
+    fetch(`${API_URL}/products`).then(r => r.ok ? r.json() : []).then(setProducts).catch(()=>{});
   }, []);
 
   async function handleSubmit(e) {

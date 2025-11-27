@@ -10,10 +10,12 @@ export default function BlogDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api' 
+
   useEffect(() => {
     const fetchBlog = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/blogs/slug/${params.slug}`);
+        const res = await fetch(`${API_URL}/blogs/slug/${params.slug}`);
         
         if (!res.ok) {
           if (res.status === 404) {

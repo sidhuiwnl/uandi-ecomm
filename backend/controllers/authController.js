@@ -5,6 +5,7 @@ const nodemailer = require('nodemailer');
 const User = require('../models/authModel');
 require('dotenv').config();
 
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
   port: process.env.EMAIL_PORT,
@@ -25,11 +26,11 @@ exports.googleCallback = async (req, res, next) => {
   passport.authenticate('google', { session: false }, async (err, user) => {
     if (err) {
       console.error('Google auth error:', err);
-      return res.redirect('http://localhost:3000/login?error=auth_failed');
+      return res.redirect(`${FRONTEND_URL}/login?error=auth_failed`);
     }
     if (!user) {
       console.error('No user found in Google callback');
-      return res.redirect('http://localhost:3000/login?error=no_user');
+      return res.redirect(`${FRONTEND_URL}/login?error=no_user`);
     }
 
     try {
@@ -60,10 +61,10 @@ exports.googleCallback = async (req, res, next) => {
       });
 
       console.log('Cookies set:', { accessToken, refreshToken }); // Debug log
-      res.redirect('http://localhost:3000/auth/google/callback');
+      res.redirect(`${FRONTEND_URL}/auth/google/callback`);
     } catch (error) {
       console.error('Error in Google callback:', error);
-      res.redirect('http://localhost:3000/login?error=server_error');
+      res.redirect(`${FRONTEND_URL}/login?error=server_error`);
     }
   })(req, res, next);
 };
@@ -163,7 +164,7 @@ exports.forgotPassword = async (req, res, next) => {
     const expiry = new Date(Date.now() + 3600000); // 1 hour expiry
     await User.updateResetToken(user.user_id, token, expiry);
 
-    const resetLink = `http://localhost:3000/reset-password?token=${token}`;
+    const resetLink = `${FRONTEND_URL}/reset-password?token=${token}`;
     await transporter.sendMail({
       to: user.email,
       subject: 'Password Reset',

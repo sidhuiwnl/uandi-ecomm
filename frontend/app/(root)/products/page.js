@@ -189,10 +189,10 @@ export default function AllProductsPage() {
                 {/* Header */}
                 <div className="mb-8">
                     <div className="flex items-center gap-3 mb-4">
-                        <Link href={`/${role}/console/dashboard`}>
+                        <Link href={`/`}>
                             <button className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200">
                                 <ArrowLeftIcon className="w-4 h-4" />
-                                Back to Dashboard
+                                Back to Home
                             </button>
                         </Link>
                     </div>

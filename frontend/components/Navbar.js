@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 import AuthModal from './AuthModal'; // <-- new modal component
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { useSelector, useDispatch } from "react-redux";
 import { verifyUser, logout, refreshToken } from "@/store/authSlice";
@@ -48,14 +48,15 @@ export default function Navbar() {
    const [isLoggingOut, setIsLoggingOut] = useState(false);
     const dispatch = useDispatch();
     const router = useRouter();
+    const pathname = usePathname();
     const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
     const { items } = useSelector((state) => state.cart);
 
   const navLinks = [
     { name: 'Shop All', href: '/products' },
     { name: 'Currate Your Routine ', href: '/curate-your-routine' },
-    { name: 'Collections', href: '/' },
-    { name: 'Blog', href: '/blog' },
+    { name: 'Collections', href: '/#collections' },
+    { name: 'About', href: '/about' },
     { name: 'AI Skincare', href: '/ai-skincare' },
   ];
 
@@ -106,22 +107,32 @@ export default function Navbar() {
         <div className="relative flex items-center justify-between px-4 py-6 md:px-8 lg:px-12">
           {/* LEFT SECTION - Navigation Links */}
           <div className="hidden md:flex items-center gap-4 lg:gap-6 xl:gap-8">
-            {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                href={link.href}
-                className="text-[9px] md:text-[10px] xl:text-[15px] text-gray-800 hover:text-black font-medium relative group transition-colors whitespace-nowrap"
-              >
-                {link.name}
-                {link.name === 'Shop' && (
-                  <span className="absolute left-1/2 -bottom-2 -translate-x-1/2 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span className="w-1 h-1 bg-black rounded-full"></span>
-                    <span className="w-1 h-1 bg-black rounded-full"></span>
-                    <span className="w-1 h-1 bg-black rounded-full"></span>
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  onClick={(e) => {
+                    if (link.href.includes('#') && pathname === '/') {
+                      e.preventDefault();
+                      const id = link.href.split('#')[1];
+                      const el = document.getElementById(id);
+                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }}
+                  className="text-[9px] md:text-[10px] xl:text-[15px] text-gray-800 hover:text-black font-medium relative group transition-colors whitespace-nowrap"
+                >
+                  <span className="relative inline-block">
+                    {link.name}
+                    {/* Animated underline highlight */}
+                    <span
+                      className={`absolute left-0 -bottom-1 h-0.5 bg-[#D8234B] transition-all duration-300 ease-out ${isActive ? 'w-full' : 'w-0 group-hover:w-full'}`}
+                    />
                   </span>
-                )}
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
 
           {/* MOBILE LEFT: Hamburger + Search */}
@@ -279,20 +290,48 @@ export default function Navbar() {
             )}
           </div>
         </div>
-        {/* Mobile Menu */}
-        {menuOpen && (
-          <div className="md:hidden bg-[#FCFBF5] px-6 py-4 space-y-4 border-t border-gray-200">
-            {navLinks.map((link) => (
-              <Link
-                key={link.name}
-                href={link.href}
-                className="block text-gray-800 hover:text-black font-medium"
-                onClick={() => setMenuOpen(false)}
-              >
-                {link.name}
-              </Link>
-            ))}
+          {/* Mobile Drawer */}
+        <div
+          className={`md:hidden fixed inset-y-0 left-0 z-40 w-72 bg-[#FCFBF5] border-r border-gray-200 shadow-xl transform transition-transform duration-300 ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+        >
+          <div className="px-6 py-4">
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.name}
+                  href={link.href}
+                  className="block py-3 text-gray-800 font-medium relative group"
+                  onClick={(e) => {
+                    // smooth-scroll if anchor and on home page
+                    if (link.href.includes('#') && pathname === '/') {
+                      e.preventDefault();
+                      const id = link.href.split('#')[1];
+                      const el = document.getElementById(id);
+                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                    setMenuOpen(false);
+                  }}
+                >
+                  <span className="relative inline-block">
+                    {link.name}
+                    <span
+                      className={`absolute left-0 -bottom-1 h-0.5 bg-[#D8234B] transition-all duration-300 ease-out ${isActive ? 'w-full' : 'w-0 group-hover:w-full'}`}
+                    />
+                  </span>
+                </Link>
+              );
+            })}
           </div>
+        </div>
+
+        {/* Backdrop for drawer */}
+        {menuOpen && (
+          <button
+            aria-label="Close menu"
+            className="md:hidden fixed inset-0 z-30 bg-black/30"
+            onClick={() => setMenuOpen(false)}
+          />
         )}
       </nav>
 

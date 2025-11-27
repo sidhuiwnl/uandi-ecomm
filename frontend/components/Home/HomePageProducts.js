@@ -65,10 +65,10 @@ export default function HomePageProducts() {
   return (
     <section className="mt-8 mx-1 md:mx-7 py-8">
       <div className="text-center mb-14">
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-[#D8234B] mb-4 tracking-tight">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-800 mb-4 tracking-tight">
             Just For You
           </h2>
-          <p className="text-lg text-[#D8234B]/80 max-w-xl mx-auto">
+          <p className="text-lg text-gray-400 max-w-xl mx-auto">
             Handpicked products to elevate your skincare routine.
           </p>
         </div>

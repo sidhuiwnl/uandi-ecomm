@@ -55,7 +55,7 @@ const Footer = () => {
     <footer className="w-full">
       {/* --- Top Red Section --- */}
       {/* Using pink-600 (or adjust to a custom color like #f72c69) for the background */}
-      <div className="bg-pink-600 text-white py-12 px-6 sm:px-12 lg:px-24">
+      <div className="bg-[#d8234b]/90 text-white py-12 px-6 sm:px-12 lg:px-24">
         <div className="max-w-7xl mx-auto">
           {/*
             Key: grid-cols-4 for equal width on md and larger screens.

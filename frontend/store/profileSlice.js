@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
-const API_URL = "http://localhost:5000";  
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
 // put your actual backend URL here (env variables optional)
 
 // get profile

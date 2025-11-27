@@ -1,9 +1,9 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 
-const API = 'http://localhost:5000/blogs';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'
 
 export const fetchBlogs = createAsyncThunk('blog/fetchAll', async ({ status } = {}) => {
-  const url = status ? `${API}?status=${status}` : API;
+  const url = status ? `${API_URL}/blogs?status=${status}` : `${API_URL}/blogs`;
   const res = await fetch(url);
   return res.json();
 });
@@ -11,7 +11,7 @@ export const fetchBlogs = createAsyncThunk('blog/fetchAll', async ({ status } = 
 export const createBlog = createAsyncThunk('blog/create', async (data, { getState }) => {
   const token = localStorage.getItem('token');
   console.log('Creating blog with data:', data);
-  const res = await fetch(API, {
+  const res = await fetch(`${API_URL}/blogs`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify(data),
@@ -21,7 +21,7 @@ export const createBlog = createAsyncThunk('blog/create', async (data, { getStat
 
 export const updateBlog = createAsyncThunk('blog/update', async ({ id, ...data }, { getState }) => {
   const token = localStorage.getItem('token');
-  const res = await fetch(`${API}/${id}`, {
+  const res = await fetch(`${API_URL}/blogs/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify(data),
@@ -31,7 +31,7 @@ export const updateBlog = createAsyncThunk('blog/update', async ({ id, ...data }
 
 export const deleteBlog = createAsyncThunk('blog/delete', async (id) => {
   const token = localStorage.getItem('token');
-  await fetch(`${API}/${id}`, {
+  await fetch(`${API_URL}/blogs/${id}`, {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -40,7 +40,7 @@ export const deleteBlog = createAsyncThunk('blog/delete', async (id) => {
 
 export const toggleHide = createAsyncThunk('blog/toggleHide', async ({ id, hide }) => {
   const token = localStorage.getItem('token');
-  const res = await fetch(`${API}/${id}/hide`, {
+  const res = await fetch(`${API_URL}/blogs/${id}/hide`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify({ hide }),

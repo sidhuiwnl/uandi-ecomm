@@ -312,7 +312,10 @@ export default function AddProductPage() {
     try {
       // Create product
       const productResult = await dispatch(createProduct(formData)).unwrap();
-      const productId = productResult.data.product_id;
+      const productId = productResult?.data?.product_id ?? productResult?.product_id;
+      if (!productId) {
+        throw new Error(productResult?.message || 'Product creation failed');
+      }
 
       // Persist attributes (ignore if all empty)
       const benefitsClean = attributes.benefits.filter(b => (b.benefit_title.trim() || b.benefit_description.trim()));

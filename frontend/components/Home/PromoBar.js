@@ -2,7 +2,11 @@
 
 import React, { useState } from "react";
 
-export default function PromoBar({ product = "Milk Powder Face Wash", code = "HURRY20" }) {
+export default function PromoBar({
+	headline = "Launch Offer",
+	subtext = "50% OFF on all products",
+	code = "LAUNCH50",
+}) {
 	const [visible, setVisible] = useState(true);
 
 	if (!visible) return null;
@@ -11,20 +15,24 @@ export default function PromoBar({ product = "Milk Powder Face Wash", code = "HU
 		<div
 			role="region"
 			aria-label="Promotional banner"
-			className="w-full bg-gradient-to-r from-[#ff7a18] to-[#af002d] text-white py-2 px-4 text-sm flex items-center justify-center relative"
+			className="w-full bg-linear-to-r from-[#D8234B] to-[#FFD3D5] text-white py-2 px-4 text-sm md:text-base flex items-center justify-center relative"
 		>
 			<div className="flex items-center gap-3 flex-wrap justify-center">
-				<span className="opacity-95">
-					Product Of The Month: <strong>{product}</strong>
+				<span className="font-semibold drop-shadow-sm">
+					{headline}
 				</span>
-
 				<span className="opacity-90" aria-hidden>
 					|
 				</span>
-
 				<span className="opacity-95">
-					Use code <strong className="uppercase tracking-wide">{code}</strong> &amp; Get <strong>FLAT 20% OFF</strong>
+					{subtext}
 				</span>
+				{/* <span className="opacity-90" aria-hidden>
+					|
+				</span> */}
+				{/* <span className="opacity-95">
+					Use code <strong className="uppercase tracking-wide">{code}</strong>
+				</span> */}
 			</div>
 
 			<button
