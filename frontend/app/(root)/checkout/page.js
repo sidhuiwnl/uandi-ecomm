@@ -849,10 +849,10 @@ export default function Page() {
                                     )}
 
                                     {/* Action Buttons */}
-                                    <div className="flex gap-4">
+                                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-4">
                                         <button
                                             onClick={handleBackStep}
-                                            className="flex-1 border border-gray-300 text-gray-700 py-4 rounded-xl font-semibold hover:bg-gray-50 transition-colors duration-200"
+                                            className="w-full sm:flex-1 border border-gray-300 text-gray-700 py-3 sm:py-4 rounded-xl font-semibold text-sm sm:text-base hover:bg-gray-50 transition-colors duration-200"
                                         >
                                             Back to Delivery
                                         </button>
@@ -861,12 +861,12 @@ export default function Page() {
                                             whileTap={{ scale: 0.98 }}
                                             onClick={handleProceedToPayment}
                                             disabled={buttonLoading}
-                                            className="flex-1 bg-blue-600 text-white py-4 rounded-xl font-semibold hover:bg-blue-700 disabled:bg-gray-400 transition-colors duration-200 flex items-center justify-center gap-2"
+                                            className="w-full sm:flex-1 bg-blue-600 text-white py-3 sm:py-4 rounded-xl font-semibold text-sm sm:text-base hover:bg-blue-700 disabled:bg-gray-400 transition-colors duration-200 flex items-center justify-center gap-2"
                                         >
                                             {buttonLoading ? (
                                                 <>
                                                     <div className="w-5 h-5 border-2 border-white/50 border-t-white rounded-full animate-spin" />
-                                                    Processing Payment...
+                                                    Processing...
                                                 </>
                                             ) : (
                                                 <>
