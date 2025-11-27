@@ -72,8 +72,8 @@ export default function Page() {
     const buttonLoading = orderCreating || isPaymentProcessing;
 
     const subtotal = items?.reduce((acc, item) => acc + (item.price || 0) * (item.quantity || 0), 0) || 0;
-    const shipping = 99;
-    const tax = subtotal * 0.18;
+    const shipping = 0;
+    const tax = subtotal * 0;
     const total = Math.max(0, subtotal + shipping + tax - (discount || 0));
 
     const steps = [
@@ -151,6 +151,16 @@ export default function Page() {
         }
     }, [addresses, addressesLoading, selectedAddress]);
 
+    // Keep selected address object in sync with latest list updates
+    useEffect(() => {
+        if (selectedAddress?.address_id && Array.isArray(addresses)) {
+            const updated = addresses.find(a => a.address_id === selectedAddress.address_id);
+            if (updated && updated !== selectedAddress) {
+                setSelectedAddress(updated);
+            }
+        }
+    }, [addresses]);
+
     // Handle empty cart rendering - moved after all hooks
     if (isEmptyCart) {
         return (
@@ -208,13 +218,22 @@ export default function Page() {
 
             console.log('Submitting address:', addressData); // Debug log
 
+            let savedAddress;
             if (formData.address_id) {
-                await dispatch(updateAddress({
+                savedAddress = await dispatch(updateAddress({
                     id: formData.address_id,
                     addressData: addressData,
                 })).unwrap();
             } else {
-                await dispatch(addAddress(addressData)).unwrap();
+                savedAddress = await dispatch(addAddress(addressData)).unwrap();
+            }
+            // Immediately select the newly saved/updated address
+            if (savedAddress && savedAddress.address_id) {
+                setSelectedAddress(savedAddress);
+            }
+            // Refresh the list so it appears without reload
+            if (localUser?.user_id) {
+                dispatch(fetchAddresses(localUser.user_id));
             }
             setShowForm(false);
             setFormData({
@@ -497,7 +516,7 @@ export default function Page() {
                                 confirmButtonColor: '#22c55e'
                             });
 
-                            router.push('/orders');
+                            router.push('/profile/orders');
                         }
                     } catch (error) {
                         console.error('Payment verification failed:', error);
@@ -546,7 +565,7 @@ export default function Page() {
     };
 
     return (
-        <main className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8">
+        <main className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="text-center mb-12">

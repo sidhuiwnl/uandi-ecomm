@@ -38,6 +38,14 @@ export default function ProductCard({
   const lowestPrice = pricedVariants.length > 0
     ? Math.min(...pricedVariants.map(v => parseFloat(v.final_price || v.price || 0)))
     : null;
+  const lowestVariant = pricedVariants.length > 0
+    ? pricedVariants.reduce((lowest, current) => {
+        const lowP = parseFloat(lowest.final_price || lowest.price || 0);
+        const curP = parseFloat(current.final_price || current.price || 0);
+        return curP < lowP ? current : lowest;
+      })
+    : null;
+  const showMrp = lowestVariant && lowestVariant.mrp_price && parseFloat(lowestVariant.mrp_price) > parseFloat(lowestVariant.final_price || lowestVariant.price || 0);
   const totalStock = pricedVariants.reduce((sum, v) => sum + (v.stock || 0), 0);
   const isAddDisabled = totalStock === 0 || !pricedVariants.length;
 
@@ -164,7 +172,16 @@ export default function ProductCard({
           {product.product_name}
         </h3>
         <div className="flex items-center justify-between mb-2">
-          <span className="text-xl font-light text-gray-900">{lowestPrice !== null ? `₹${lowestPrice.toFixed(2)}` : 'Not available'}</span>
+          <div className="flex items-baseline gap-2">
+            {showMrp && (
+              <span className="text-sm text-gray-400 line-through">
+                ₹{parseFloat(lowestVariant.mrp_price).toFixed(2)}
+              </span>
+            )}
+            <span className="text-xl font-light text-gray-900">
+              {lowestPrice !== null ? `₹${lowestPrice.toFixed(2)}` : 'Not available'}
+            </span>
+          </div>
           {/* {pricedVariants.length > 1 && (
             <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
               {pricedVariants.length} Variants

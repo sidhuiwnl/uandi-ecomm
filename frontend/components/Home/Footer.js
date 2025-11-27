@@ -19,7 +19,7 @@ const aboutUsLinks = [
   { name: 'Privacy Policy', href: '/privacy-policy' },
   { name: 'Refund Policy', href: '/refund-policy' },
   {name: 'Shipping Policy', href: '/shipping-policy' },
-  { name: 'Contact Us', href: '/contact-us' },
+  { name: 'Contact Us', href: '/reach-out' },
 ];
 
 const customerServicesLinks = [
@@ -119,7 +119,7 @@ const Footer = () => {
           
           {/* Scroll to Top */}
           <p>
-            Powered by <Link href="https://www.pixelatedworks.com" target="_blank" className="hover:text-white font-semibold transition duration-150">Pixelated</Link>
+            Powered by <Link href="https://www.thepixelatedcafe.com" target="_blank" className="hover:text-white font-semibold transition duration-150">Pixelated</Link>
           </p>
         </div>
       </div>

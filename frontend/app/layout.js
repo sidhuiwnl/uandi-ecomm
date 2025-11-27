@@ -30,7 +30,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} font-sans bg-[#FCFBF5] text-gray-900`}
+        className={`${geistSans.variable} ${geistMono.variable} font-sans bg-white text-gray-900`}
       >
         <ReduxProvider>
           {/* <Navbar /> */}

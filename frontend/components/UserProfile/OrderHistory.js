@@ -331,32 +331,43 @@ export default function OrderHistory() {
                           <div className="mt-6 p-4 bg-white border border-gray-200 rounded-lg">
                             <h5 className="font-semibold text-gray-900 mb-3">Order Summary</h5>
                             <div className="space-y-2 text-sm">
-                              <div className="flex justify-between">
-                                <span>Items Total:</span>
-                                <span>
-                                  ₹
-                                  {order.total_amount + (order.coupon_discount || 0) - 99 -
-                                    (order.total_amount * 0.18)}
-                                </span>
-                              </div>
-                              {order.coupon_discount > 0 && (
-                                <div className="flex justify-between text-green-600">
-                                  <span>Coupon Discount:</span>
-                                  <span>-₹{order.coupon_discount}</span>
-                                </div>
-                              )}
-                              <div className="flex justify-between">
-                                <span>Shipping:</span>
-                                <span>₹99</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span>Tax (18%):</span>
-                                <span>₹{(order.total_amount * 0.18).toFixed(2)}</span>
-                              </div>
-                              <div className="border-t border-gray-200 pt-2 flex justify-between font-semibold">
-                                <span>Total Paid:</span>
-                                <span>₹{order.total_amount}</span>
-                              </div>
+                              {(() => {
+                                const itemsTotal = (order.items || []).reduce(
+                                  (sum, item) => sum + Number(item?.sub_total || 0),
+                                  0
+                                );
+                                const shippingAmount = Number(order?.shipping_amount ?? 0);
+                                const taxAmount = Number(order?.tax_amount ?? 0);
+                                const couponDiscount = Number(order?.coupon_discount ?? 0);
+                                const totalPaid = Number(order?.total_amount ?? (itemsTotal + shippingAmount + taxAmount - couponDiscount));
+
+                                return (
+                                  <>
+                                    <div className="flex justify-between">
+                                      <span>Items Total:</span>
+                                      <span>₹{itemsTotal.toFixed(2)}</span>
+                                    </div>
+                                    {couponDiscount > 0 && (
+                                      <div className="flex justify-between text-green-600">
+                                        <span>Coupon Discount:</span>
+                                        <span>-₹{couponDiscount.toFixed(2)}</span>
+                                      </div>
+                                    )}
+                                    <div className="flex justify-between">
+                                      <span>Shipping:</span>
+                                      <span>₹{shippingAmount.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span>Tax:</span>
+                                      <span>₹{taxAmount.toFixed(2)}</span>
+                                    </div>
+                                    <div className="border-t border-gray-200 pt-2 flex justify-between font-semibold">
+                                      <span>Total Paid:</span>
+                                      <span>₹{totalPaid.toFixed(2)}</span>
+                                    </div>
+                                  </>
+                                );
+                              })()}
                             </div>
                           </div>
 
