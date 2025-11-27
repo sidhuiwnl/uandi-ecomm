@@ -153,7 +153,7 @@ export default function Navbar() {
           <div className="absolute left-1/2 -translate-x-1/2">
             <Link href="/" className="flex items-center">
               <Image
-                src="/images/logo-main.png"
+                src="/images/logo-main-new.png"
                 alt="U&I Logo"
                 width={120}
                 height={40}

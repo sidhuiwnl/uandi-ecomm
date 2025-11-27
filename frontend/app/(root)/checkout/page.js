@@ -571,28 +571,34 @@ export default function Page() {
                 <div className="text-center mb-12">
                     <h1 className="text-4xl font-bold text-gray-900 mb-4">Checkout</h1>
 
-                    {/* Progress Steps */}
-                    <div className="flex justify-center items-center mb-8">
+                    {/* Progress Steps (Single Row) */}
+                    <div className="flex justify-center items-center mb-8 overflow-x-hidden">
                         {steps.map((step, index) => (
                             <div key={step.number} className="flex items-center">
-                                <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${
-                                    step.completed || currentStep === step.number
-                                        ? 'bg-blue-600 border-blue-600 text-white'
-                                        : 'border-gray-300 text-gray-500'
-                                } font-semibold`}>
-                                    {step.completed ? <CheckCircle2 className="w-5 h-5" /> : step.number}
+                                <div
+                                    className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 ${
+                                        step.completed || currentStep === step.number
+                                            ? 'bg-blue-600 border-blue-600 text-white'
+                                            : 'border-gray-300 text-gray-500'
+                                    } font-semibold text-xs sm:text-base`}
+                                >
+                                    {step.completed ? <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" /> : step.number}
                                 </div>
-                                <span className={`ml-2 font-medium ${
-                                    step.completed || currentStep === step.number
-                                        ? 'text-blue-600'
-                                        : 'text-gray-500'
-                                }`}>
+                                <span
+                                    className={`ml-2 font-medium text-xs sm:text-base ${
+                                        step.completed || currentStep === step.number
+                                            ? 'text-blue-600'
+                                            : 'text-gray-500'
+                                    }`}
+                                >
                                     {step.title}
                                 </span>
                                 {index < steps.length - 1 && (
-                                    <div className={`w-16 h-0.5 mx-4 ${
-                                        step.completed ? 'bg-blue-600' : 'bg-gray-300'
-                                    }`} />
+                                    <div
+                                        className={`w-8 sm:w-16 h-0.5 mx-2 sm:mx-4 ${
+                                            step.completed ? 'bg-blue-600' : 'bg-gray-300'
+                                        }`}
+                                    />
                                 )}
                             </div>
                         ))}
@@ -601,7 +607,7 @@ export default function Page() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* LEFT PANEL - Checkout Steps */}
-                    <div className="lg:col-span-2 space-y-8">
+                    <div className="lg:col-span-2 space-y-8 order-2 lg:order-1">
                         <AnimatePresence mode="wait">
                             {/* STEP 1: Delivery Details */}
                             {currentStep === 1 && (
@@ -1077,7 +1083,7 @@ export default function Page() {
                     </div>
 
                     {/* RIGHT PANEL - Order Summary */}
-                    <div className="lg:col-span-1">
+                    <div className="lg:col-span-1 order-1 lg:order-2">
                         <div className="sticky top-8">
                             <CartSummary
                                 items={items}
