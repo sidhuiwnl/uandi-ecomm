@@ -465,6 +465,7 @@ export default function Page() {
                 name: 'U&I Naturals',
                 description: 'Order Payment',
                 order_id: data.order.id,
+                image: "https://pub-25688779f5b34d7a87524a48c1772ab6.r2.dev/x%20(1).png",
                 prefill: {
                     name: selectedAddress.full_name,
                     email: localUser.email || localUser.email_id || localUser.user_email || '',
@@ -578,7 +579,7 @@ export default function Page() {
                                 <div
                                     className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 ${
                                         step.completed || currentStep === step.number
-                                            ? 'bg-blue-600 border-blue-600 text-white'
+                                            ? 'bg-[#D8234B] border-[#D8234B] text-white'
                                             : 'border-gray-300 text-gray-500'
                                     } font-semibold text-xs sm:text-base`}
                                 >
@@ -587,7 +588,7 @@ export default function Page() {
                                 <span
                                     className={`ml-2 font-medium text-xs sm:text-base ${
                                         step.completed || currentStep === step.number
-                                            ? 'text-blue-600'
+                                            ? 'text-[#D8234B]'
                                             : 'text-gray-500'
                                     }`}
                                 >
@@ -596,7 +597,7 @@ export default function Page() {
                                 {index < steps.length - 1 && (
                                     <div
                                         className={`w-8 sm:w-16 h-0.5 mx-2 sm:mx-4 ${
-                                            step.completed ? 'bg-blue-600' : 'bg-gray-300'
+                                            step.completed ? 'bg-[#D8234B]' : 'bg-gray-300'
                                         }`}
                                     />
                                 )}
@@ -618,8 +619,8 @@ export default function Page() {
                                     className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200"
                                 >
                                     <div className="flex items-center gap-3 mb-6">
-                                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                            <MapPin className="w-4 h-4 text-blue-600" />
+                                        <div className="w-8 h-8 bg-[#FEE2E7] rounded-full flex items-center justify-center">
+                                            <MapPin className="w-4 h-4 text-[#D8234B]" />
                                         </div>
                                         <h2 className="text-2xl font-semibold text-gray-900">Delivery Details</h2>
                                     </div>
@@ -721,7 +722,7 @@ export default function Page() {
                                         whileTap={{ scale: 0.98 }}
                                         onClick={handleNextStep}
                                         disabled={!selectedAddress}
-                                        className="w-full bg-blue-600 text-white py-4 rounded-xl font-semibold text-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center gap-2"
+                                        className="w-full bg-[#D8234B] text-white py-4 rounded-xl font-semibold text-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center gap-2"
                                     >
                                         Continue to Review
                                         <ArrowRight className="w-5 h-5" />
@@ -861,7 +862,7 @@ export default function Page() {
                                             whileTap={{ scale: 0.98 }}
                                             onClick={handleProceedToPayment}
                                             disabled={buttonLoading}
-                                            className="w-full sm:flex-1 bg-blue-600 text-white py-3 sm:py-4 rounded-xl font-semibold text-sm sm:text-base hover:bg-blue-700 disabled:bg-gray-400 transition-colors duration-200 flex items-center justify-center gap-2"
+                                            className="w-full sm:flex-1 bg-[#D8234B] text-white py-3 sm:py-4 rounded-xl font-semibold text-sm sm:text-base hover:bg-[#B71C3A] disabled:bg-gray-400 transition-colors duration-200 flex items-center justify-center gap-2"
                                         >
                                             {buttonLoading ? (
                                                 <>

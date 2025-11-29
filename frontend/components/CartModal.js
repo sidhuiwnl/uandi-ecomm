@@ -157,7 +157,7 @@ export default function CartModal() {
                         setShowAuthModal(true);
                       }
                     }}
-                    className="flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-indigo-700"
+                    className="flex w-full cursor-pointer items-center justify-center rounded-md border border-transparent bg-[#D8234B] px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-[#B71C3A]"
                   >
                     Checkout
                   </button>
@@ -167,7 +167,7 @@ export default function CartModal() {
                     or{' '}
                     <button
                       type="button"
-                      className="font-medium text-indigo-600 hover:text-indigo-500"
+                      className="font-medium text-[#D8234B] hover:text-[#B71C3A] cursor-pointer"
                       onClick={handleClose}
                     >
                       Continue Shopping

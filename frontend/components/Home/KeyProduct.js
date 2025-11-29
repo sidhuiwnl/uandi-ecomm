@@ -28,7 +28,7 @@ const KeyProduct = () => {
       <div className="w-full md:w-1/2 flex flex-col justify-center px-4 md:px-0 text-center md:text-left">
         <h2 className="text-2xl sm:text-3xl font-bold text-[#D8234B] mb-4">Butter up your skin</h2>
         <p className="text-md sm:text-lg text-[#D8234B]">
-           Our body butter is crafted to keep your skin soft, deeply moisturized, and naturally glowing.Made with rich butters and nourishing oils, it melts into the skin to deliver long-lasting hydration without feeling greasy. Perfect for dry, dull, or tired skin that needs gentle daily care.
+           Our Shearoots body butter is crafted to keep your skin soft, deeply moisturized, and naturally glowing.Made with rich butters and nourishing oils, it melts into the skin to deliver long-lasting hydration without feeling greasy. Perfect for dry, dull, or tired skin that needs gentle daily care.
         </p>
       </div>
     </div>

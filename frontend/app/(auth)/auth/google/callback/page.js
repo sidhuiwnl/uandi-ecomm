@@ -68,6 +68,7 @@ function GoogleCallbackInner() {
               try { await dispatch(mergeCarts()).unwrap(); } catch (mergeErr) { console.warn('Failed to merge cart after Google login (refresh path):', mergeErr); }
 
               let override = null;
+              console.log('postAuthRedirect (refresh path):', localStorage.getItem('postAuthRedirect'));
               try { override = localStorage.getItem('postAuthRedirect'); } catch (_) {}
               if (override) {
                 try { localStorage.removeItem('postAuthRedirect'); } catch (_) {}
