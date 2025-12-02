@@ -15,6 +15,24 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// Centralized cookie options to behave correctly in production and cross-site scenarios
+const isProd = process.env.NODE_ENV === 'production';
+// If your frontend runs on a different site (different eTLD+1) than the API,
+// set CROSS_SITE_COOKIES=true to force SameSite=None; Secure
+const crossSite = String(process.env.CROSS_SITE_COOKIES || '').toLowerCase() === 'true';
+const cookieSameSite = process.env.COOKIE_SAMESITE || (crossSite ? 'none' : 'lax');
+// Optionally scope cookies to a parent domain (e.g., .uandinaturals.com) when API is on a subdomain
+const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
+
+const buildCookieOpts = (overrides = {}) => ({
+  httpOnly: true,
+  // Secure must be true when SameSite=None (browser requirement)
+  secure: isProd || cookieSameSite === 'none',
+  sameSite: cookieSameSite,
+  ...(cookieDomain ? { domain: cookieDomain } : {}),
+  ...overrides,
+});
+
 const validatePassword = (password) => {
   const passwordRegex = /^(?=.*[A-Z])(?=.*\d)/;
   return passwordRegex.test(password);
@@ -61,18 +79,8 @@ exports.googleCallback = async (req, res, next) => {
 
       await User.updateRefreshToken(user.user_id, refreshToken);
 
-      res.cookie('accessToken', accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 15 * 60 * 1000, // 15 minutes
-        sameSite: 'lax', // Allow cookies in redirect
-      });
-      res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        sameSite: 'lax',
-      });
+      res.cookie('accessToken', accessToken, buildCookieOpts({ maxAge: 15 * 60 * 1000 }));
+      res.cookie('refreshToken', refreshToken, buildCookieOpts({ maxAge: 7 * 24 * 60 * 60 * 1000 }));
 
       // Pull redirect hint from OAuth state if present
       let redirectHint = null;
@@ -122,18 +130,8 @@ exports.signup = async (req, res, next) => {
 
     await User.updateRefreshToken(user.user_id, refreshToken);
 
-    res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 15 * 60 * 1000,
-      sameSite: 'lax',
-    });
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      sameSite: 'lax',
-    });
+    res.cookie('accessToken', accessToken, buildCookieOpts({ maxAge: 15 * 60 * 1000 }));
+    res.cookie('refreshToken', refreshToken, buildCookieOpts({ maxAge: 7 * 24 * 60 * 60 * 1000 }));
 
     res.status(201).json({ user: { user_id: user.user_id, email: user.email, phone_number: user.phone_number, first_name: user.first_name, last_name: user.last_name  } });
   } catch (error) {
@@ -165,18 +163,8 @@ exports.login = async (req, res, next) => {
 
     await User.createSession(user.user_id, refreshToken);
 
-    res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 15 * 60 * 1000,
-      sameSite: 'lax',
-    });
-    res.cookie('refreshToken', refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-      sameSite: 'lax',
-    });
+    res.cookie('accessToken', accessToken, buildCookieOpts({ maxAge: 15 * 60 * 1000 }));
+    res.cookie('refreshToken', refreshToken, buildCookieOpts({ maxAge: 7 * 24 * 60 * 60 * 1000 }));
 
     res.json({ user: { user_id: user.user_id, email: user.email, phone_number: user.phone_number, first_name: user.first_name, last_name: user.last_name,  profile_picture_url: user.profile_picture_url, role: user.role_name,} });
   } catch (error) {
@@ -241,11 +229,7 @@ exports.refreshToken = async (req, res, next) => {
       { expiresIn: '15m' }
     );
 
-    res.cookie('accessToken', accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 15 * 60 * 1000,
-    });
+    res.cookie('accessToken', accessToken, buildCookieOpts({ maxAge: 15 * 60 * 1000 }));
 
     res.json({ message: 'Access token refreshed' });
   } catch (error) {
@@ -265,8 +249,10 @@ exports.logout = async (req, res) => {
     }
   }
 
-  res.clearCookie('accessToken');
-  res.clearCookie('refreshToken');
+  // Clear with matching attributes to ensure deletion across domains/samesite
+  const clearOpts = buildCookieOpts({ maxAge: 0 });
+  res.clearCookie('accessToken', clearOpts);
+  res.clearCookie('refreshToken', clearOpts);
 
   res.json({ message: 'Logged out successfully' });
 };
@@ -300,12 +286,7 @@ exports.verify = async (req, res, next) => {
         { expiresIn: '15m' }
       );
 
-      res.cookie('accessToken', accessToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 15 * 60 * 1000,
-        sameSite: 'lax',
-      });
+      res.cookie('accessToken', accessToken, buildCookieOpts({ maxAge: 15 * 60 * 1000 }));
 
       console.log('New access token set:', accessToken); // Debug log
     } catch (error) {
