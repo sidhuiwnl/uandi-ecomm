@@ -19,6 +19,7 @@ import { useEffect } from 'react';
 import { useSelector, useDispatch } from "react-redux";
 import { verifyUser, logout, refreshToken } from "@/store/authSlice";
 import { openCart } from '@/store/slices/cartSlice';
+import { mergeCarts, fetchCart } from '@/store/slices/cartSlice';
 import Image from 'next/image';
 
 function getFirstName(user) {
@@ -79,6 +80,31 @@ export default function Navbar() {
         });
     }
   }, []);
+
+  // After authentication, auto-merge any guest cart into user cart once per session
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    (async () => {
+      try {
+        const mergedKey = `cartMerged:${user?.user_id || 'anon'}`;
+        const alreadyMerged = typeof window !== 'undefined' ? sessionStorage.getItem(mergedKey) : '1';
+        const localCart = typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('cart') || '[]')) : [];
+
+        if (localCart.length > 0 && !alreadyMerged) {
+          try {
+            await dispatch(mergeCarts()).unwrap();
+          } catch (e) {
+            console.warn('Cart merge after auth failed:', e);
+          }
+          try { await dispatch(fetchCart()).unwrap(); } catch {}
+          try { sessionStorage.setItem(mergedKey, '1'); } catch {}
+        } else {
+          // Ensure cart is hydrated for authenticated user even without merge
+          try { await dispatch(fetchCart()).unwrap(); } catch {}
+        }
+      } catch {}
+    })();
+  }, [isAuthenticated, dispatch, user?.user_id]);
 
   const handleLogout = (e) => {
     e.stopPropagation();
