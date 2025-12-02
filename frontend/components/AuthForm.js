@@ -60,7 +60,7 @@ export default function AuthForm({ redirectAfterAuth = null, onAuthenticated, in
     }
 
     try {
-      const localCart = JSON.parse(localStorage.getItem('cart')) || [];
+     const localCart = JSON.parse(localStorage.getItem('cart')) || [];
       
       if (view === 'login') {
         const userData = await dispatch(login({ 

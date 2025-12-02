@@ -114,12 +114,20 @@ export const clearCart = createAsyncThunk('cart/clearCart', async (_, { dispatch
 
 export const mergeCarts = createAsyncThunk('cart/mergeCarts', async (providedUser, { dispatch, getState, rejectWithValue }) => {
   try {
-    const { auth } = getState();
+    const { auth, cart } = getState();
     const user = providedUser || auth.user;
     const isAuthenticated = !!user || auth.isAuthenticated;
 
-    const localCart = JSON.parse(localStorage.getItem('cart')) || [];
-    console.log("Local cart items to merge:", localCart);
+    // Try to get cart from Redux state first, then fallback to localStorage
+    // This handles cases where localStorage might be cleared or unavailable but Redux state is still fresh
+    let localCart = cart.items.length > 0 && !cart.items[0].cart_item_id ? cart.items : [];
+    
+    if (localCart.length === 0) {
+       localCart = JSON.parse(localStorage.getItem('cart')) || [];
+    }
+
+    console.log("Cart items to merge:", localCart);
+    
     if (isAuthenticated && user && localCart.length > 0) {
 
       // Normalize items for bulk merge endpoint
