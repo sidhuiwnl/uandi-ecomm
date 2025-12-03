@@ -7,7 +7,8 @@ const cartModel = {
             `SELECT ci.*, 
               p.product_name, 
               v.variant_name, 
-              v.final_price, 
+              v.final_price,
+              v.mrp_price, 
               v.price AS variant_price,
               v.stock,
               ci.variant_image AS main_image

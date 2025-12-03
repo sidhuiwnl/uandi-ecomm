@@ -7,8 +7,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import {
     MapPin, Phone, User, ArrowRight, Tag, X,
-    Plus, Shield, CheckCircle2,
-    CreditCard, Lock, ShoppingCart
+    Plus, Shield, CheckCircle2, Package,
+    CreditCard, Lock, ShoppingCart, ChevronDown,
+    Truck
 } from "lucide-react";
 import CartSummary from "@/components/Checkout/CartSummary";
 import {
@@ -40,6 +41,7 @@ export default function Page() {
     const authState = useSelector((state) => state.auth);
     const { addresses, loading: addressesLoading, error: addressesError } = useSelector((state) => state.addresses);
     const { items, loading: cartLoading } = useSelector((state) => state.cart);
+
     const {
         appliedCoupon,
         discount,
@@ -68,6 +70,7 @@ export default function Page() {
     const [isEmptyCart, setIsEmptyCart] = useState(false); // New state for empty cart
     const [razorpayReady, setRazorpayReady] = useState(false);
     const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
+    const [showAvailableCoupons, setShowAvailableCoupons] = useState(false);
 
     const buttonLoading = orderCreating || isPaymentProcessing;
 
@@ -160,6 +163,36 @@ export default function Page() {
             }
         }
     }, [addresses]);
+
+    // Handle browser back/forward navigation
+    useEffect(() => {
+        // Push initial state
+        if (typeof window !== 'undefined') {
+            window.history.replaceState({ step: currentStep }, '', window.location.pathname);
+        }
+
+        const handlePopState = (event) => {
+            if (event.state?.step) {
+                setCurrentStep(event.state.step);
+            } else {
+                // If no state, go back to step 1
+                setCurrentStep(1);
+            }
+        };
+
+        window.addEventListener('popstate', handlePopState);
+
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+        };
+    }, []);
+
+    // Update history when step changes
+    useEffect(() => {
+        if (typeof window !== 'undefined' && currentStep > 1) {
+            window.history.pushState({ step: currentStep }, '', window.location.pathname);
+        }
+    }, [currentStep]);
 
     // Handle empty cart rendering
     if (cartLoading) {
@@ -448,6 +481,7 @@ export default function Page() {
             source_collection_id: item.source_collection_id,
             coupon_discount: appliedCoupon ? ((discount || 0) / items.length) : 0
         }));
+        
 
         try {
             setIsPaymentProcessing(true);
@@ -569,31 +603,33 @@ export default function Page() {
     };
 
     const handleBackStep = () => {
-        setCurrentStep(1);
+        if (typeof window !== 'undefined') {
+            window.history.back();
+        }
     };
 
     return (
-        <main className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 py-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <main className="min-h-screen bg-gray-50 py-4 sm:py-8 pb-24 sm:pb-8">
+            <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="text-center mb-12">
-                    <h1 className="text-4xl font-bold text-gray-900 mb-4">Checkout</h1>
+                <div className="text-center mb-6 sm:mb-12">
+                    <h1 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">Checkout</h1>
 
                     {/* Progress Steps (Single Row) */}
-                    <div className="flex justify-center items-center mb-8 overflow-x-hidden">
+                    <div className="flex justify-center items-center mb-4 sm:mb-8 overflow-x-auto">
                         {steps.map((step, index) => (
                             <div key={step.number} className="flex items-center">
                                 <div
-                                    className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 ${
+                                    className={`flex items-center justify-center w-7 h-7 sm:w-10 sm:h-10 rounded-full border-2 ${
                                         step.completed || currentStep === step.number
                                             ? 'bg-[#D8234B] border-[#D8234B] text-white'
                                             : 'border-gray-300 text-gray-500'
                                     } font-semibold text-xs sm:text-base`}
                                 >
-                                    {step.completed ? <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" /> : step.number}
+                                    {step.completed ? <CheckCircle2 className="w-3 h-3 sm:w-5 sm:h-5" /> : step.number}
                                 </div>
                                 <span
-                                    className={`ml-2 font-medium text-xs sm:text-base ${
+                                    className={`ml-1.5 sm:ml-2 font-medium text-xs sm:text-base ${
                                         step.completed || currentStep === step.number
                                             ? 'text-[#D8234B]'
                                             : 'text-gray-500'
@@ -603,7 +639,7 @@ export default function Page() {
                                 </span>
                                 {index < steps.length - 1 && (
                                     <div
-                                        className={`w-8 sm:w-16 h-0.5 mx-2 sm:mx-4 ${
+                                        className={`w-6 sm:w-16 h-0.5 mx-1.5 sm:mx-4 ${
                                             step.completed ? 'bg-[#D8234B]' : 'bg-gray-300'
                                         }`}
                                     />
@@ -613,9 +649,9 @@ export default function Page() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* LEFT PANEL - Checkout Steps */}
-                    <div className="lg:col-span-2 space-y-8 order-2 lg:order-1">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
+                    {/* MAIN CONTENT - Left Column */}
+                    <div className="lg:col-span-2 space-y-4 sm:space-y-8">
                         <AnimatePresence mode="wait">
                             {/* STEP 1: Delivery Details */}
                             {currentStep === 1 && (
@@ -623,13 +659,13 @@ export default function Page() {
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: 20 }}
-                                    className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200"
+                                    className="bg-white rounded-lg sm:rounded-2xl p-4 sm:p-8 shadow-sm border border-gray-200"
                                 >
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <div className="w-8 h-8 bg-[#FEE2E7] rounded-full flex items-center justify-center">
-                                            <MapPin className="w-4 h-4 text-[#D8234B]" />
+                                    <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                                        <div className="w-7 h-7 sm:w-8 sm:h-8 bg-[#FEE2E7] rounded-full flex items-center justify-center">
+                                            <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#D8234B]" />
                                         </div>
-                                        <h2 className="text-2xl font-semibold text-gray-900">Delivery Details</h2>
+                                        <h2 className="text-lg sm:text-2xl font-semibold text-gray-900">Delivery Details</h2>
                                     </div>
 
                                     {addressesLoading && (
@@ -645,58 +681,57 @@ export default function Page() {
                                     )}
 
                                     {/* Address Selection */}
-                                    <div className="space-y-4 mb-6">
-                                        <h3 className="font-medium text-gray-900 mb-3">Select Delivery Address</h3>
+                                    <div className="space-y-3 mb-4 sm:mb-6">
+                                        <h3 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">Select Delivery Address</h3>
 
                                         {!addressesLoading && addresses?.length > 0 ? (
-                                            <div className="grid gap-4">
+                                            <div className="grid gap-3">
                                                 {addresses.map((address) => (
                                                     <div
                                                         key={address.address_id}
-                                                        className={`border-2 rounded-xl p-4 cursor-pointer transition-all duration-200 ${
+                                                        className={`border-2 rounded-lg p-3 sm:p-4 cursor-pointer transition-all duration-200 ${
                                                             selectedAddress?.address_id === address.address_id
-                                                                ? "border-blue-500 bg-blue-50 shadow-sm"
-                                                                : "border-gray-200 hover:border-gray-300"
+                                                                ? "border-[#D8234B] bg-pink-50 shadow-sm"
+                                                                : "border-gray-200 hover:border-gray-300 active:border-[#D8234B]"
                                                         }`}
                                                         onClick={() => setSelectedAddress(address)}
                                                     >
-                                                        <div className="flex justify-between items-start">
-                                                            <div className="flex items-center gap-3">
+                                                        <div className="flex justify-between items-start gap-2">
+                                                            <div className="flex items-start gap-2 sm:gap-3 flex-1 min-w-0">
                                                                 {selectedAddress?.address_id === address.address_id ? (
-                                                                    <CheckCircle2 className="w-5 h-5 text-blue-600" />
+                                                                    <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#D8234B] shrink-0 mt-0.5" />
                                                                 ) : (
-                                                                    <div className="w-5 h-5 rounded-full border-2 border-gray-300" />
+                                                                    <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full border-2 border-gray-300 shrink-0 mt-0.5" />
                                                                 )}
-                                                                <div>
-                                                                    <p className="font-semibold text-gray-900">{address.full_name}</p>
-                                                                    <p className="text-sm text-gray-600">{address.phone_number}</p>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <p className="font-semibold text-gray-900 text-sm sm:text-base truncate">{address.full_name}</p>
+                                                                    <p className="text-xs sm:text-sm text-gray-600 mt-0.5">{address.phone_number}</p>
+                                                                    <div className="mt-1.5 text-xs sm:text-sm text-gray-600 leading-relaxed">
+                                                                        <p className="line-clamp-2">{address.address_line_1}{address.address_line_2 && `, ${address.address_line_2}`}</p>
+                                                                        <p className="mt-0.5">{address.city}, {address.state} - {address.postal_code}</p>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                            <div className="flex gap-2">
+                                                            <div className="flex gap-1.5 sm:gap-2 shrink-0">
                                                                 <button
                                                                     onClick={(e) => handleEdit(address, e)}
-                                                                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                                                    className="text-[#D8234B] hover:text-[#B71C3A] text-xs sm:text-sm font-medium px-2 py-1"
                                                                 >
                                                                     Edit
                                                                 </button>
                                                                 <button
                                                                     onClick={(e) => handleDelete(address.address_id, e)}
-                                                                    className="text-red-600 hover:text-red-800 text-sm font-medium"
+                                                                    className="text-red-600 hover:text-red-700 text-xs sm:text-sm font-medium px-2 py-1"
                                                                 >
                                                                     Delete
                                                                 </button>
                                                             </div>
                                                         </div>
-                                                        <div className="mt-2 text-sm text-gray-600 ml-8">
-                                                            <p>{address.address_line_1}{address.address_line_2 && `, ${address.address_line_2}`}</p>
-                                                            <p>{address.city}, {address.state} - {address.postal_code}</p>
-                                                            <p>{address.country}</p>
-                                                        </div>
                                                     </div>
                                                 ))}
                                             </div>
                                         ) : !addressesLoading && (
-                                            <div className="text-center text-gray-500 py-8">
+                                            <div className="text-center text-gray-500 py-6 sm:py-8 text-sm">
                                                 No addresses found. Please add an address to continue.
                                             </div>
                                         )}
@@ -714,22 +749,22 @@ export default function Page() {
                                                 }
                                                 setShowForm(true);
                                             }}
-                                            className="w-full border-2 border-dashed border-gray-300 rounded-xl p-6 hover:border-blue-400 hover:bg-blue-50 transition-colors duration-200 group"
+                                            className="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6 hover:border-[#D8234B] hover:bg-pink-50 transition-colors duration-200 group"
                                         >
-                                            <div className="flex items-center justify-center gap-2 text-gray-600 group-hover:text-blue-600">
-                                                <Plus className="w-5 h-5" />
-                                                <span className="font-medium">Add New Address</span>
+                                            <div className="flex items-center justify-center gap-2 text-gray-600 group-hover:text-[#D8234B]">
+                                                <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+                                                <span className="font-medium text-sm sm:text-base">Add New Address</span>
                                             </div>
                                         </button>
                                     </div>
 
-                                    {/* Continue Button */}
+                                    {/* Continue Button - Hidden on Mobile */}
                                     <motion.button
                                         whileHover={{ scale: 1.02 }}
                                         whileTap={{ scale: 0.98 }}
                                         onClick={handleNextStep}
                                         disabled={!selectedAddress}
-                                        className="w-full bg-[#D8234B] text-white py-4 rounded-xl font-semibold text-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 flex items-center justify-center gap-2"
+                                        className="hidden sm:flex w-full bg-[#D8234B] text-white py-4 rounded-xl font-semibold text-lg disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 items-center justify-center gap-2"
                                     >
                                         Continue to Review
                                         <ArrowRight className="w-5 h-5" />
@@ -743,79 +778,91 @@ export default function Page() {
                                     initial={{ opacity: 0, x: -20 }}
                                     animate={{ opacity: 1, x: 0 }}
                                     exit={{ opacity: 0, x: 20 }}
-                                    className="bg-white rounded-2xl p-8 shadow-sm border border-gray-200"
+                                    className="bg-white rounded-lg sm:rounded-2xl p-4 sm:p-8 shadow-sm border border-gray-200"
                                 >
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                            <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                    <div className="flex items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
+                                        <div className="w-7 h-7 sm:w-8 sm:h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                            <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-green-600" />
                                         </div>
-                                        <h2 className="text-2xl font-semibold text-gray-900">Order Review</h2>
+                                        <h2 className="text-lg sm:text-2xl font-semibold text-gray-900">Order Review</h2>
                                     </div>
 
                                     {/* Selected Address Review */}
-                                    <div className="mb-8">
-                                        <h3 className="font-medium text-gray-900 mb-3">Delivery Address</h3>
-                                        <div className="bg-gray-50 rounded-xl p-4">
-                                            <p className="font-semibold">{selectedAddress?.full_name}</p>
-                                            <p className="text-gray-600">{selectedAddress?.phone_number}</p>
-                                            <p className="text-gray-600">
-                                                {selectedAddress?.address_line_1}
-                                                {selectedAddress?.address_line_2 && `, ${selectedAddress.address_line_2}`}
-                                            </p>
-                                            <p className="text-gray-600">
-                                                {selectedAddress?.city}, {selectedAddress?.state} - {selectedAddress?.postal_code}
-                                            </p>
-                                            <p className="text-gray-600">{selectedAddress?.country}</p>
+                                    <div className="mb-6 sm:mb-8">
+                                        <h3 className="font-medium text-gray-900 mb-2 sm:mb-3 text-sm sm:text-base">Delivery Address</h3>
+                                        <div className="bg-gray-50 rounded-lg p-3 sm:p-4 border border-gray-100">
+                                            <div className="flex items-start gap-2 mb-2">
+                                                <MapPin className="w-4 h-4 text-[#D8234B] shrink-0 mt-0.5" />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-semibold text-sm sm:text-base text-gray-900">{selectedAddress?.full_name}</p>
+                                                    <p className="text-xs sm:text-sm text-gray-600 mt-0.5">{selectedAddress?.phone_number}</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-xs sm:text-sm text-gray-600 leading-relaxed ml-6">
+                                                <p>
+                                                    {selectedAddress?.address_line_1}
+                                                    {selectedAddress?.address_line_2 && `, ${selectedAddress.address_line_2}`}
+                                                </p>
+                                                <p className="mt-0.5">
+                                                    {selectedAddress?.city}, {selectedAddress?.state} - {selectedAddress?.postal_code}
+                                                </p>
+                                            </div>
                                         </div>
                                         <button
                                             onClick={() => setCurrentStep(1)}
-                                            className="text-blue-600 hover:text-blue-800 text-sm font-medium mt-2"
+                                            className="text-[#D8234B] hover:text-[#B71C3A] text-xs sm:text-sm font-medium mt-2"
                                         >
                                             Change address
                                         </button>
                                     </div>
 
                                     {/* Coupon Section */}
-                                    <div className="mb-8">
-                                        <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                                            <Tag className="w-4 h-4" />
+                                    <div className="mb-6 sm:mb-8">
+                                        <h3 className="font-medium text-gray-900 mb-2 sm:mb-3 flex items-center gap-2 text-sm sm:text-base">
+                                            <Tag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                             Apply Coupon
                                         </h3>
 
                                         {appliedCoupon ? (
-                                            <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl p-4">
-                                                <div>
-                                                    <p className="font-medium text-green-800">
-                                                        {appliedCoupon.coupon_code} Applied
-                                                    </p>
-                                                    <p className="text-sm text-green-600">
-                                                        {appliedCoupon.discount_type === 'percentage'
-                                                            ? `${appliedCoupon.discount_value}% off`
-                                                            : `₹${appliedCoupon.discount_value} off`
-                                                        }
-                                                    </p>
+                                            <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3 sm:p-4">
+                                                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                                                    <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                                                        <Tag className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="font-semibold text-green-800 text-sm sm:text-base truncate">
+                                                            {appliedCoupon.coupon_code} Applied
+                                                        </p>
+                                                        <p className="text-xs sm:text-sm text-green-600">
+                                                            {appliedCoupon.discount_type === 'percentage'
+                                                                ? `${appliedCoupon.discount_value}% off`
+                                                                : `₹${appliedCoupon.discount_value} off`
+                                                            }
+                                                        </p>
+                                                    </div>
                                                 </div>
                                                 <button
                                                     onClick={handleRemoveCoupon}
-                                                    className="text-red-500 hover:text-red-700"
+                                                    className="text-red-500 hover:text-red-700 p-1 shrink-0"
+                                                    aria-label="Remove coupon"
                                                 >
-                                                    <X className="w-4 h-4" />
+                                                    <X className="w-4 h-4 sm:w-5 sm:h-5" />
                                                 </button>
                                             </div>
                                         ) : (
-                                            <div className="flex gap-3">
+                                            <div className="flex gap-2 sm:gap-3">
                                                 <input
                                                     type="text"
                                                     value={couponCode}
                                                     onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
                                                     placeholder="Enter coupon code"
-                                                    className="flex-1 border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 ring-blue-500 focus:border-blue-500"
+                                                    className="flex-1 border border-gray-300 rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm focus:ring-2 ring-[#D8234B] focus:border-[#D8234B] outline-none"
                                                     disabled={couponLoading}
                                                 />
                                                 <button
                                                     onClick={handleApplyCoupon}
                                                     disabled={!couponCode.trim() || couponLoading}
-                                                    className="bg-gray-800 text-white px-6 py-3 rounded-lg text-sm disabled:bg-gray-400 flex items-center gap-2 transition-colors duration-200"
+                                                    className="bg-[#D8234B] text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg text-xs sm:text-sm font-medium disabled:bg-gray-400 flex items-center gap-2 transition-colors duration-200 hover:bg-[#B71C3A] shrink-0"
                                                 >
                                                     {couponLoading ? (
                                                         <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
@@ -826,27 +873,52 @@ export default function Page() {
                                             </div>
 
                                         )}
-                                        <div className="mb-8">
-                                            <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                                                <Tag className="w-4 h-4" />
-                                                Available Coupons
-                                            </h3>
+                                        <div className="mt-4 sm:mt-6">
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowAvailableCoupons(!showAvailableCoupons)}
+                                                className="w-full flex items-center justify-between font-medium text-gray-900 text-sm sm:text-base hover:text-[#D8234B] transition-colors"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <Tag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                                    <span>Available Coupons</span>
+                                                </div>
+                                                <ChevronDown 
+                                                    className={`w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 ${
+                                                        showAvailableCoupons ? 'rotate-180' : ''
+                                                    }`}
+                                                />
+                                            </button>
 
-                                            <AvailableCoupons
-                                                userId={localUser?.user_id}
-                                                collectionId={items[0]?.source_collection_id}
-                                                cartItems={items}
-                                                subtotal={subtotal}
-                                                appliedCoupon={appliedCoupon}
-                                                onCouponApplied={() => {
-                                                    // Optional: Any callback after coupon is applied
-                                                    console.log('Coupon applied successfully');
-                                                }}
-                                            />
+                                            <AnimatePresence>
+                                                {showAvailableCoupons && (
+                                                    <motion.div
+                                                        initial={{ height: 0, opacity: 0 }}
+                                                        animate={{ height: 'auto', opacity: 1 }}
+                                                        exit={{ height: 0, opacity: 0 }}
+                                                        transition={{ duration: 0.2 }}
+                                                        className="overflow-hidden"
+                                                    >
+                                                        <div className="mt-3">
+                                                            <AvailableCoupons
+                                                                userId={localUser?.user_id}
+                                                                collectionId={items[0]?.source_collection_id}
+                                                                cartItems={items}
+                                                                subtotal={subtotal}
+                                                                appliedCoupon={appliedCoupon}
+                                                                onCouponApplied={() => {
+                                                                    // Optional: Any callback after coupon is applied
+                                                                    console.log('Coupon applied successfully');
+                                                                }}
+                                                            />
+                                                        </div>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
                                         </div>
 
                                         {couponError && (
-                                            <p className="text-red-500 text-sm mt-2">{getErrorMessage(couponError)}</p>
+                                            <p className="text-red-500 text-xs sm:text-sm mt-2">{getErrorMessage(couponError)}</p>
                                         )}
                                     </div>
 
@@ -856,8 +928,8 @@ export default function Page() {
                                         </div>
                                     )}
 
-                                    {/* Action Buttons */}
-                                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-4">
+                                    {/* Action Buttons - Hidden on Mobile */}
+                                    <div className="hidden sm:flex flex-col sm:flex-row gap-3 sm:gap-4 mt-4">
                                         <button
                                             onClick={handleBackStep}
                                             className="w-full sm:flex-1 border border-gray-300 text-gray-700 py-3 sm:py-4 rounded-xl font-semibold text-sm sm:text-base hover:bg-gray-50 transition-colors duration-200"
@@ -888,210 +960,50 @@ export default function Page() {
                             )}
                         </AnimatePresence>
 
-                        {/* Address Form Modal */}
-                        {/* Address Form Modal */}
-                        <AnimatePresence>
-                            {showForm && (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-                                    onClick={() => {
-                                        setShowForm(false);
-                                        setFormErrors({});
-                                    }}
-                                >
-                                    <motion.div
-                                        initial={{ scale: 0.9, opacity: 0 }}
-                                        animate={{ scale: 1, opacity: 1 }}
-                                        exit={{ scale: 0.9, opacity: 0 }}
-                                        transition={{ duration: 0.15 }}
-                                        className="bg-white rounded-2xl w-full max-w-md shadow-xl p-6 overflow-hidden"
-                                        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
-                                    >
-                                        <h3 className="text-xl font-semibold mb-5 text-gray-900">
-                                            {formData.address_id ? "Edit Address" : "Add New Address"}
-                                        </h3>
+                        {/* Order Summary - Mobile Only (Below Content) */}
+                        <div className="block lg:hidden mt-4 sm:mt-8" id="order-summary-mobile">
+                            <CartSummary
+                                items={items}
+                                subtotal={subtotal}
+                                shipping={shipping}
+                                tax={tax}
+                                discount={discount}
+                                total={total}
+                                appliedCoupon={appliedCoupon}
+                            />
 
-                                        <form onSubmit={handleSubmit} className="space-y-4">
-
-                                            {/* FULL NAME */}
-                                            <div className="space-y-1">
-                                                <input
-                                                    type="text"
-                                                    name="full_name"
-                                                    value={formData.full_name}
-                                                    onChange={handleChange}
-                                                    placeholder="Full Name"
-                                                    className={`w-full rounded-xl px-4 py-3 border transition-all ${
-                                                        formErrors.full_name
-                                                            ? "border-red-500 focus:ring-red-500"
-                                                            : "border-gray-300 focus:ring-blue-500"
-                                                    }`}
-                                                />
-                                                {formErrors.full_name && (
-                                                    <p className="text-red-500 text-xs">{formErrors.full_name}</p>
-                                                )}
-                                            </div>
-
-                                            {/* PHONE */}
-                                            <div className="space-y-1">
-                                                <input
-                                                    type="tel"
-                                                    name="phone_number"
-                                                    value={formData.phone_number}
-                                                    onChange={handleChange}
-                                                    placeholder="Phone Number"
-                                                    className={`w-full rounded-xl px-4 py-3 border transition-all ${
-                                                        formErrors.phone_number
-                                                            ? "border-red-500 focus:ring-red-500"
-                                                            : "border-gray-300 focus:ring-blue-500"
-                                                    }`}
-                                                />
-                                                {formErrors.phone_number && (
-                                                    <p className="text-red-500 text-xs">{formErrors.phone_number}</p>
-                                                )}
-                                            </div>
-
-                                            {/* ADDRESS 1 */}
-                                            <div className="space-y-1">
-                                                <input
-                                                    type="text"
-                                                    name="address_line_1"
-                                                    value={formData.address_line_1}
-                                                    onChange={handleChange}
-                                                    placeholder="Address Line 1"
-                                                    className={`w-full rounded-xl px-4 py-3 border transition-all ${
-                                                        formErrors.address_line_1
-                                                            ? "border-red-500 focus:ring-red-500"
-                                                            : "border-gray-300 focus:ring-blue-500"
-                                                    }`}
-                                                />
-                                                {formErrors.address_line_1 && (
-                                                    <p className="text-red-500 text-xs">{formErrors.address_line_1}</p>
-                                                )}
-                                            </div>
-
-                                            {/* ADDRESS 2 */}
-                                            <div>
-                                                <input
-                                                    type="text"
-                                                    name="address_line_2"
-                                                    value={formData.address_line_2}
-                                                    onChange={handleChange}
-                                                    placeholder="Address Line 2 (Optional)"
-                                                    className="w-full rounded-xl px-4 py-3 border border-gray-300 focus:ring-blue-500 transition-all"
-                                                />
-                                            </div>
-
-                                            {/* CITY - STATE */}
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="space-y-1">
-                                                    <input
-                                                        type="text"
-                                                        name="city"
-                                                        value={formData.city}
-                                                        onChange={handleChange}
-                                                        placeholder="City"
-                                                        className={`w-full rounded-xl px-4 py-3 border transition-all ${
-                                                            formErrors.city
-                                                                ? "border-red-500 focus:ring-red-500"
-                                                                : "border-gray-300 focus:ring-blue-500"
-                                                        }`}
-                                                    />
-                                                    {formErrors.city && (
-                                                        <p className="text-red-500 text-xs">{formErrors.city}</p>
-                                                    )}
-                                                </div>
-
-                                                <div className="space-y-1">
-                                                    <input
-                                                        type="text"
-                                                        name="state"
-                                                        value={formData.state}
-                                                        onChange={handleChange}
-                                                        placeholder="State"
-                                                        className={`w-full rounded-xl px-4 py-3 border transition-all ${
-                                                            formErrors.state
-                                                                ? "border-red-500 focus:ring-red-500"
-                                                                : "border-gray-300 focus:ring-blue-500"
-                                                        }`}
-                                                    />
-                                                    {formErrors.state && (
-                                                        <p className="text-red-500 text-xs">{formErrors.state}</p>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* PINCODE - COUNTRY */}
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div className="space-y-1">
-                                                    <input
-                                                        type="text"
-                                                        name="postal_code"
-                                                        value={formData.postal_code}
-                                                        onChange={handleChange}
-                                                        placeholder="Postal Code"
-                                                        className={`w-full rounded-xl px-4 py-3 border transition-all ${
-                                                            formErrors.postal_code
-                                                                ? "border-red-500 focus:ring-red-500"
-                                                                : "border-gray-300 focus:ring-blue-500"
-                                                        }`}
-                                                    />
-                                                    {formErrors.postal_code && (
-                                                        <p className="text-red-500 text-xs">{formErrors.postal_code}</p>
-                                                    )}
-                                                </div>
-
-                                                <div>
-                                                    <input
-                                                        type="text"
-                                                        name="country"
-                                                        value={formData.country}
-                                                        onChange={handleChange}
-                                                        placeholder="Country"
-                                                        className="w-full rounded-xl px-4 py-3 border border-gray-300 focus:ring-blue-500 transition-all"
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            {/* BUTTONS */}
-                                            <div className="flex gap-3 pt-4">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setShowForm(false);
-                                                        setFormErrors({});
-                                                    }}
-                                                    className="flex-1 py-3 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium transition"
-                                                >
-                                                    Cancel
-                                                </button>
-
-                                                <button
-                                                    type="submit"
-                                                    disabled={savingAddress}
-                                                    className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition disabled:bg-gray-400 flex items-center justify-center gap-2"
-                                                >
-                                                    {savingAddress ? (
-                                                        <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
-                                                    ) : (
-                                                        "Save Address"
-                                                    )}
-                                                </button>
-                                            </div>
-
-                                        </form>
-                                    </motion.div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-
+                            {/* Security & Benefits Badges */}
+                            <div className="space-y-3 mt-4">
+                                {/* Secure Checkout */}
+                                <div className="bg-white rounded-lg sm:rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-200">
+                                    <div className="flex items-center gap-2 sm:gap-3">
+                                        <Shield className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-green-600" />
+                                        <div>
+                                            <span className="font-semibold text-sm sm:text-base text-gray-900">Secure Checkout</span>
+                                            <p className="text-xs sm:text-sm text-gray-600 mt-0.5">Your payment information is encrypted</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex pt-3 items-center gap-2 sm:gap-3">
+                                        <Truck className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-green-600" />
+                                        <div>
+                                            <span className="font-semibold text-sm sm:text-base text-gray-900">Free Delivery</span>
+                                            <p className="text-xs sm:text-sm text-gray-600 mt-0.5">On two or more products</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex pt-3 items-center gap-2 sm:gap-3">
+                                        <Package className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-green-600" />
+                                        <div>
+                                            <span className="font-semibold text-sm sm:text-base text-gray-900">3 Days Replacement</span>
+                                            <p className="text-xs sm:text-sm text-gray-600 mt-0.5">On damaged products</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    {/* RIGHT PANEL - Order Summary */}
-                    <div className="lg:col-span-1 order-1 lg:order-2">
+                    {/* Order Summary - Desktop Sidebar */}
+                    <div className="hidden lg:block lg:col-span-1" id="order-summary">
                         <div className="sticky top-8">
                             <CartSummary
                                 items={items}
@@ -1103,21 +1015,289 @@ export default function Page() {
                                 appliedCoupon={appliedCoupon}
                             />
 
-                            {/* Security Badge */}
-                            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200 mt-6">
-                                <div className="flex items-center gap-3 text-green-600 mb-2">
-                                    <Shield className="w-5 h-5" />
-                                    <span className="font-semibold">Secure Checkout</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-gray-600 text-sm">
-                                    <Lock className="w-4 h-4" />
-                                    <span>Your payment information is encrypted and secure</span>
+                            {/* Security & Benefits Badges */}
+                            <div className="space-y-3 mt-4">
+                                {/* Secure Checkout */}
+                                <div className="bg-white rounded-lg sm:rounded-2xl p-4 sm:p-5 shadow-sm border border-gray-200">
+                                    <div className="flex items-center gap-2 sm:gap-3">
+                                        <Shield className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-green-600" />
+                                        <div>
+                                            <span className="font-semibold text-sm sm:text-base text-gray-900">Secure Checkout</span>
+                                            <p className="text-xs sm:text-sm text-gray-600 mt-0.5">Your payment information is encrypted</p>
+                                        </div>
+                                    </div>
+
+                                     <div className="flex pt-3 items-center gap-2 sm:gap-3">
+                                        <Truck className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-green-600" />
+                                        <div>
+                                            <span className="font-semibold text-sm sm:text-base text-gray-900">Free Delivery</span>
+                                            <p className="text-xs sm:text-sm text-gray-600 mt-0.5">On two or more products</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex pt-3 items-center gap-2 sm:gap-3">
+                                        <Package className="w-4 h-4 sm:w-5 sm:h-5 shrink-0 text-green-600" />
+                                        <div>
+                                            <span className="font-semibold text-sm sm:text-base text-gray-900">3 Days Replacement</span>
+                                            <p className="text-xs sm:text-sm text-gray-600 mt-0.5">On damaged products</p>
+                                        </div>
+                                    </div>
+
+
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            {/* Address Form Modal */}
+            <AnimatePresence>
+                {showForm && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+                        onClick={() => {
+                            setShowForm(false);
+                            setFormErrors({});
+                        }}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            transition={{ duration: 0.15 }}
+                            className="bg-white rounded-2xl w-full max-w-md shadow-xl p-6 overflow-hidden"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <h3 className="text-xl font-semibold mb-5 text-gray-900">
+                                {formData.address_id ? "Edit Address" : "Add New Address"}
+                            </h3>
+
+                            <form onSubmit={handleSubmit} className="space-y-4">
+                                {/* FULL NAME */}
+                                <div className="space-y-1">
+                                    <input
+                                        type="text"
+                                        name="full_name"
+                                        value={formData.full_name}
+                                        onChange={handleChange}
+                                        placeholder="Full Name"
+                                        className={`w-full rounded-xl px-4 py-3 border transition-all ${
+                                            formErrors.full_name
+                                                ? "border-red-500 focus:ring-red-500"
+                                                : "border-gray-300 focus:ring-blue-500"
+                                        }`}
+                                    />
+                                    {formErrors.full_name && (
+                                        <p className="text-red-500 text-xs">{formErrors.full_name}</p>
+                                    )}
+                                </div>
+
+                                {/* PHONE */}
+                                <div className="space-y-1">
+                                    <input
+                                        type="tel"
+                                        name="phone_number"
+                                        value={formData.phone_number}
+                                        onChange={handleChange}
+                                        placeholder="Phone Number"
+                                        className={`w-full rounded-xl px-4 py-3 border transition-all ${
+                                            formErrors.phone_number
+                                                ? "border-red-500 focus:ring-red-500"
+                                                : "border-gray-300 focus:ring-blue-500"
+                                        }`}
+                                    />
+                                    {formErrors.phone_number && (
+                                        <p className="text-red-500 text-xs">{formErrors.phone_number}</p>
+                                    )}
+                                </div>
+
+                                {/* ADDRESS 1 */}
+                                <div className="space-y-1">
+                                    <input
+                                        type="text"
+                                        name="address_line_1"
+                                        value={formData.address_line_1}
+                                        onChange={handleChange}
+                                        placeholder="Address Line 1"
+                                        className={`w-full rounded-xl px-4 py-3 border transition-all ${
+                                            formErrors.address_line_1
+                                                ? "border-red-500 focus:ring-red-500"
+                                                : "border-gray-300 focus:ring-blue-500"
+                                        }`}
+                                    />
+                                    {formErrors.address_line_1 && (
+                                        <p className="text-red-500 text-xs">{formErrors.address_line_1}</p>
+                                    )}
+                                </div>
+
+                                {/* ADDRESS 2 */}
+                                <div>
+                                    <input
+                                        type="text"
+                                        name="address_line_2"
+                                        value={formData.address_line_2}
+                                        onChange={handleChange}
+                                        placeholder="Address Line 2 (Optional)"
+                                        className="w-full rounded-xl px-4 py-3 border border-gray-300 focus:ring-blue-500 transition-all"
+                                    />
+                                </div>
+
+                                {/* CITY - STATE */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <input
+                                            type="text"
+                                            name="city"
+                                            value={formData.city}
+                                            onChange={handleChange}
+                                            placeholder="City"
+                                            className={`w-full rounded-xl px-4 py-3 border transition-all ${
+                                                formErrors.city
+                                                    ? "border-red-500 focus:ring-red-500"
+                                                    : "border-gray-300 focus:ring-blue-500"
+                                            }`}
+                                        />
+                                        {formErrors.city && (
+                                            <p className="text-red-500 text-xs">{formErrors.city}</p>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <input
+                                            type="text"
+                                            name="state"
+                                            value={formData.state}
+                                            onChange={handleChange}
+                                            placeholder="State"
+                                            className={`w-full rounded-xl px-4 py-3 border transition-all ${
+                                                formErrors.state
+                                                    ? "border-red-500 focus:ring-red-500"
+                                                    : "border-gray-300 focus:ring-blue-500"
+                                            }`}
+                                        />
+                                        {formErrors.state && (
+                                            <p className="text-red-500 text-xs">{formErrors.state}</p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* PINCODE - COUNTRY */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                        <input
+                                            type="text"
+                                            name="postal_code"
+                                            value={formData.postal_code}
+                                            onChange={handleChange}
+                                            placeholder="Postal Code"
+                                            className={`w-full rounded-xl px-4 py-3 border transition-all ${
+                                                formErrors.postal_code
+                                                    ? "border-red-500 focus:ring-red-500"
+                                                    : "border-gray-300 focus:ring-blue-500"
+                                            }`}
+                                        />
+                                        {formErrors.postal_code && (
+                                            <p className="text-red-500 text-xs">{formErrors.postal_code}</p>
+                                        )}
+                                    </div>
+
+                                    <div>
+                                        <input
+                                            type="text"
+                                            name="country"
+                                            value={formData.country}
+                                            onChange={handleChange}
+                                            placeholder="Country"
+                                            className="w-full rounded-xl px-4 py-3 border border-gray-300 focus:ring-blue-500 transition-all"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* BUTTONS */}
+                                <div className="flex gap-3 pt-4">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowForm(false);
+                                            setFormErrors({});
+                                        }}
+                                        className="flex-1 py-3 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium transition"
+                                    >
+                                        Cancel
+                                    </button>
+
+                                    <button
+                                        type="submit"
+                                        disabled={savingAddress}
+                                        className="flex-1 py-3 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition disabled:bg-gray-400 flex items-center justify-center gap-2"
+                                    >
+                                        {savingAddress ? (
+                                            <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+                                        ) : (
+                                            "Save Address"
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Mobile Sticky Bottom CTA - Myntra Style */}
+            {!isEmptyCart && (
+                <div className="fixed bottom-0 left-0 right-0 z-50 block sm:hidden bg-white border-t border-gray-200 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] safe-area-inset-bottom">
+                    <div className="px-4 py-3 flex items-center justify-between gap-4">
+                        {/* Left: Price Details */}
+                        <div className="flex flex-col min-w-0">
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-lg font-bold text-gray-900">₹{Math.max(0, total).toFixed(0)}</span>
+                                {discount > 0 && (
+                                    <span className="text-xs text-gray-500 line-through">₹{(total + discount).toFixed(0)}</span>
+                                )}
+                            </div>
+                            <button
+                                type="button"
+                                className="text-xs text-[#D8234B] hover:text-[#B71C3A] text-left font-medium mt-0.5"
+                                onClick={() => {
+                                    const summaryEl = document.querySelector('#order-summary-mobile');
+                                    if (summaryEl) summaryEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                }}
+                            >
+                                View price details
+                            </button>
+                        </div>
+
+                        {/* Right: Action Button */}
+                        <button
+                            onClick={currentStep === 2 ? handleProceedToPayment : handleNextStep}
+                            disabled={buttonLoading || (currentStep === 1 && !selectedAddress)}
+                            className="shrink-0 min-w-[140px] bg-[#D8234B] text-white py-3 px-6 rounded-lg font-semibold text-sm disabled:bg-gray-400 disabled:cursor-not-allowed hover:bg-[#B71C3A] transition-colors duration-200 flex items-center justify-center gap-2"
+                        >
+                            {buttonLoading ? (
+                                <>
+                                    <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+                                    <span className="text-xs">Processing</span>
+                                </>
+                            ) : currentStep === 2 ? (
+                                <>
+                                    <CreditCard className="w-4 h-4" />
+                                    <span>Place Order</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span>Continue</span>
+                                    <ArrowRight className="w-4 h-4" />
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </div>
+            )}
         </main>
     );
 }
