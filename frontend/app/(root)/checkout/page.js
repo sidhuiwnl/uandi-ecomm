@@ -510,6 +510,10 @@ export default function Page() {
                 amount: data.order.amount,
                 currency: data.order.currency,
                 name: 'U&I Naturals',
+                retry: {
+                    enabled: false
+                },
+
                 description: 'Order Payment',
                 order_id: data.order.id,
                 image: "https://pub-25688779f5b34d7a87524a48c1772ab6.r2.dev/x%20(1).png",
@@ -601,7 +605,9 @@ export default function Page() {
 
             razorpay.on('payment.failed', (response) => {
                 setIsPaymentProcessing(false);
+                router.push("/checkout");
                 const errorDescription = response?.error?.description || 'Payment failed. Please try again.';
+
                 Swal.fire({
                     icon: 'error',
                     title: 'Payment Failed',
