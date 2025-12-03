@@ -83,7 +83,7 @@ export default function ProductCard({
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="bg-white rounded-2xl border border-gray-200 hover:border-gray-300 transition-all duration-300 cursor-pointer group relative overflow-hidden hover:shadow-lg"
+      className="bg-white rounded-2xl border border-gray-200 hover:border-gray-300 transition-all duration-300 cursor-pointer group relative overflow-hidden hover:shadow-lg flex flex-col"
       onClick={() => onNavigate?.(product.product_id)}
     >
       {/* Wishlist */}
@@ -164,14 +164,15 @@ export default function ProductCard({
       </div>
 
       {/* Content */}
-      <div className="p-5">
+      <div className="p-5 flex-1 flex flex-col">
         <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">
           {product.category?.category_name || 'Uncategorized'}
         </p>
         <h3 className="font-medium text-gray-900 line-clamp-2 mb-3 group-hover:text-gray-700 transition-colors">
           {product.product_name}
         </h3>
-        <div className="space-y-1.5 mb-3">
+        {/* Price block with fixed min-height to keep button placement consistent */}
+        <div className="space-y-1.5 mb-4 min-h-[55px]">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xl font-semibold text-gray-900">
               {lowestPrice !== null ? `₹${lowestPrice.toFixed(2)}` : 'Not available'}
@@ -188,6 +189,7 @@ export default function ProductCard({
             )}
           </div>
         </div>
+        {/* Sticky-bottom button inside card */}
         <button
           className={`w-full py-2.5 sm:py-3 px-3 sm:px-4 text-xs sm:text-sm font-medium rounded-lg sm:rounded-xl transition-all duration-200 ${isAddDisabled ? 'opacity-60 cursor-not-allowed' : 'hover:shadow-md active:scale-95'}`}
           style={isAddDisabled ? { backgroundColor: '#f3f4f6', color: '#6b7280' } : { backgroundImage: 'linear-gradient(to right, #D8234B, #FFD3D5)', color: '#ffffff' }}

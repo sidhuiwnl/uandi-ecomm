@@ -9,6 +9,7 @@ import { addToCart, openCart, updateCartItemQuantity } from '@/store/slices/cart
 import { fetchWishlist, addToWishlist, removeFromWishlist } from '@/store/slices/wishlistSlice';
 import ReviewList from '@/components/ReviewList';
 import ReviewForm from '@/components/ReviewForm';
+import ProductCard from '@/components/ProductCard';
 
 import {
     ArrowLeftIcon,
@@ -88,6 +89,18 @@ export default function ProductDetailsPage() {
         });
         return { averageRating: (sum / reviews.length).toFixed(1), ratingCounts: counts };
     }, [reviews]);
+
+    // Random product suggestions (exclude current product), pick up to 4
+    const suggestions = useMemo(() => {
+        if (!Array.isArray(products) || !product) return [];
+        const pool = products.filter(p => p.product_id !== product.product_id);
+        // Shuffle using Fisher-Yates
+        for (let i = pool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [pool[i], pool[j]] = [pool[j], pool[i]];
+        }
+        return pool.slice(0, 4);
+    }, [products, product]);
 
     const isYoutubeUrl = (url) => /youtube\.com|youtu\.be/.test(url || '');
 
@@ -620,6 +633,18 @@ export default function ProductDetailsPage() {
                     {reviewsStatus === 'idle' && <p className="text-sm text-gray-500 animate-pulse">Loading reviews...</p>}
                     <ReviewList reviews={reviews} />
                 </div>
+
+                {/* Random Suggestions */}
+                {suggestions.length > 0 && (
+                    <div className="mt-16">
+                        <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6">You may also like</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+                            {suggestions.map((s) => (
+                                <ProductCard key={s.product_id} product={s} />
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {/* Review Modal */}
                 {isAuthenticated && user && showReviewModal && (
