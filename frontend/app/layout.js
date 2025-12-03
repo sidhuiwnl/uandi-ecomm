@@ -2,6 +2,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import ReduxProvider from "@/components/ReduxProvider";
 import Navbar from "@/components/Navbar";
+import CartModal from "@/components/CartModal";
+import WishlistModal from "@/components/WishlistModal";
 
 // Load fonts
 const geistSans = Geist({
@@ -35,6 +37,8 @@ export default function RootLayout({ children }) {
         <ReduxProvider>
           {/* <Navbar /> */}
           <main>{children}</main>
+          <CartModal />
+          <WishlistModal />
         </ReduxProvider>
       </body>
     </html>

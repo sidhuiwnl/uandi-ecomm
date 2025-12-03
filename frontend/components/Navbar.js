@@ -15,12 +15,14 @@ import {
 
 import AuthModal from './AuthModal'; // <-- new modal component
 import SearchModal from './SearchModal';
+import WishlistModal from './WishlistModal';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { useSelector, useDispatch } from "react-redux";
 import { verifyUser, logout, refreshToken } from "@/store/authSlice";
 import { openCart } from '@/store/slices/cartSlice';
 import { mergeCarts } from '@/store/slices/cartSlice';
+import { openWishlist, fetchWishlist, mergeWishlists } from '@/store/slices/wishlistSlice';
 import Image from 'next/image';
 
 function getFirstName(user) {
@@ -54,6 +56,7 @@ export default function Navbar() {
     const pathname = usePathname();
     const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
     const { items } = useSelector((state) => state.cart);
+    const { items: wishlistItems } = useSelector((state) => state.wishlist);
 
   const navLinks = [
     { name: 'Shop All', href: '/products' },
@@ -72,8 +75,9 @@ export default function Navbar() {
       dispatch(verifyUser())
         .unwrap()
         .then((user) => {
-          // Session restored. Merge carts.
+          // Session restored. Merge carts and wishlists.
           dispatch(mergeCarts(user));
+          dispatch(mergeWishlists(user));
         })
         .catch((error) => {
           // console.error("Verify user error on dashboard:", error);
@@ -81,7 +85,10 @@ export default function Navbar() {
             dispatch(refreshToken())
               .unwrap()
               .then(() => dispatch(verifyUser()).unwrap())
-              .then((user) => dispatch(mergeCarts(user)))
+              .then((user) => {
+                dispatch(mergeCarts(user));
+                dispatch(mergeWishlists(user));
+              })
               .catch(() => router.push("/"));
           } 
           // else {
@@ -183,7 +190,18 @@ export default function Navbar() {
               <button aria-label="Search" onClick={() => setSearchOpen(true)}>
                 <Search className="w-5 h-5 cursor-pointer hover:text-black" />
               </button>
-              <Heart className="w-5 h-5 cursor-pointer hover:text-black" />
+              <button
+                aria-label="Wishlist"
+                className="relative hover:text-black transition"
+                onClick={() => dispatch(openWishlist())}
+              >
+                <Heart className="w-5 h-5 cursor-pointer" />
+                {wishlistItems.length > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-black text-white text-[10px] rounded-full px-[5px]">
+                    {wishlistItems.length}
+                  </span>
+                )}
+              </button>
               <button
                     aria-label="Cart"
                     className="relative hover:text-black transition"
@@ -354,6 +372,8 @@ export default function Navbar() {
       <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
       {/* SEARCH MODAL */}
       <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
+      {/* WISHLIST MODAL */}
+      <WishlistModal />
     </>
   );
 }

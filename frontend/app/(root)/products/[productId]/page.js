@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProducts } from '@/store/productsSlice';
 import { fetchReviews } from '@/store/slices/reviewsSlice';
+import { addToCart, openCart, updateCartItemQuantity } from '@/store/slices/cartSlice';
+import { fetchWishlist, addToWishlist, removeFromWishlist } from '@/store/slices/wishlistSlice';
 import ReviewList from '@/components/ReviewList';
 import ReviewForm from '@/components/ReviewForm';
 
@@ -19,7 +21,6 @@ import {
     PlusIcon,
 } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
-import { addToCart, openCart, updateCartItemQuantity } from '@/store/slices/cartSlice';
 import axios from 'axios';
 
 export default function ProductDetailsPage() {
@@ -31,11 +32,11 @@ export default function ProductDetailsPage() {
     const { items: cartItems } = useSelector((state) => state.cart);
     const { isAuthenticated, user } = useSelector((state) => state.auth);
     const { items: reviews, status: reviewsStatus } = useSelector((state) => state.reviews);
+    const { items: wishlistItems } = useSelector((state) => state.wishlist);
 
     const [product, setProduct] = useState(null);
     const [selectedVariantIndex, setSelectedVariantIndex] = useState(0);
     const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
-    const [isWishlisted, setIsWishlisted] = useState(false);
 
     // Shiprocket state
     const [pincode, setPincode] = useState('');
@@ -45,6 +46,7 @@ export default function ProductDetailsPage() {
 
     useEffect(() => {
         if (!products.length) dispatch(fetchProducts());
+        dispatch(fetchWishlist());
     }, [dispatch, products.length]);
 
     useEffect(() => {
@@ -162,6 +164,25 @@ export default function ProductDetailsPage() {
         const id = isAuthenticated ? cartItem.cart_item_id : cartItem.variant_id;
         dispatch(updateCartItemQuantity({ cart_item_id: id, quantity: cartItem.quantity - 1 }));
     };
+
+    const handleToggleWishlist = () => {
+        if (!isAuthenticated) return;
+        
+        const variant_id = currentVariant.variant_id;
+        const isInWishlist = wishlistItems.some(
+            item => item.product_id === product.product_id && item.variant_id === variant_id
+        );
+        
+        if (isInWishlist) {
+            dispatch(removeFromWishlist({ product_id: product.product_id, variant_id }));
+        } else {
+            dispatch(addToWishlist({ product_id: product.product_id, variant_id }));
+        }
+    };
+
+    const isInWishlist = wishlistItems.some(
+        item => item.product_id === product?.product_id && item.variant_id === currentVariant?.variant_id
+    );
 
     const checkDelivery = async () => {
         if (!pincode || pincode.length !== 6) {
@@ -343,17 +364,19 @@ export default function ProductDetailsPage() {
                             <span className="text-3xl font-semibold text-gray-900 tracking-tight">
                                 ₹{parseFloat(currentVariant.final_price || currentVariant.price).toFixed(2)}
                             </span>
-                            <button
-                                onClick={() => setIsWishlisted(!isWishlisted)}
-                                aria-pressed={isWishlisted}
-                                className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-red-50 transition duration-300"
-                            >
-                                {isWishlisted ? (
-                                    <HeartIconSolid className="w-6 h-6 text-red-600 animate-pulse" />
-                                ) : (
-                                    <HeartIcon className="w-6 h-6 text-gray-400 hover:text-red-600" />
-                                )}
-                            </button>
+                            {isAuthenticated && (
+                                <button
+                                    onClick={handleToggleWishlist}
+                                    aria-pressed={isInWishlist}
+                                    className="w-11 h-11 flex items-center justify-center rounded-full hover:bg-red-50 transition duration-300"
+                                >
+                                    {isInWishlist ? (
+                                        <HeartIconSolid className="w-6 h-6 text-red-600 animate-pulse" />
+                                    ) : (
+                                        <HeartIcon className="w-6 h-6 text-gray-400 hover:text-red-600" />
+                                    )}
+                                </button>
+                            )}
                         </div>
 
                         <div className="space-y-4">
@@ -417,15 +440,30 @@ export default function ProductDetailsPage() {
                                 </button>
                             </div>
                         ) : (
-                            <button
-                                onClick={handleAddToCart}
-                                disabled={currentVariant.stock === 0}
-                                className="w-full max-w-md bg-[#D8234B] hover:bg-[#b21c3f] text-white font-semibold py-4 rounded-xl flex items-center justify-center gap-3 transition duration-300 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed shadow-md"
-                                aria-disabled={currentVariant.stock === 0}
-                            >
-                                <ShoppingCartIcon className="w-5 h-5" />
-                                {currentVariant.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
-                            </button>
+                            <div className="flex items-center gap-4 w-full max-w-md">
+                                <button
+                                    onClick={handleAddToCart}
+                                    disabled={currentVariant.stock === 0}
+                                    className="flex-1 bg-[#D8234B] hover:bg-[#b21c3f] text-white font-semibold py-4 rounded-xl flex items-center justify-center gap-3 transition duration-300 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed shadow-md"
+                                    aria-disabled={currentVariant.stock === 0}
+                                >
+                                    <ShoppingCartIcon className="w-5 h-5" />
+                                    {currentVariant.stock === 0 ? 'Out of Stock' : 'Add to Cart'}
+                                </button>
+                                {isAuthenticated && (
+                                    <button
+                                        onClick={handleToggleWishlist}
+                                        className="px-5 py-4 border border-gray-300 rounded-xl hover:border-[#D8234B] hover:bg-red-50 transition-colors"
+                                        aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+                                    >
+                                        {isInWishlist ? (
+                                            <HeartIconSolid className="w-6 h-6 text-red-500" />
+                                        ) : (
+                                            <HeartIcon className="w-6 h-6 text-gray-700" />
+                                        )}
+                                    </button>
+                                )}
+                            </div>
                         )}
 
                         {/* Shiprocket Delivery */}

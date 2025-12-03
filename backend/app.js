@@ -110,11 +110,13 @@ const cartRoutes = require('./routes/cartRoutes');
 const orderRoutes = require("./routes/orderRoutes");
 const addressesRoutes = require("./routes/addressRoutes");
 const paymentRoutes = require('./routes/paymentRoutes');
+const wishlistRoutes = require('./routes/wishlistRoutes');
 app.use('/cart', cartRoutes);
 app.use("/orders",orderRoutes)
 
 app.use("/address",addressesRoutes)
 app.use('/payments', paymentRoutes);
+app.use('/wishlist', wishlistRoutes);
 
 const shippingRoutes = require('./routes/shippingRoutes');
 app.use('/shipping', shippingRoutes);

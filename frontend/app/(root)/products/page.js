@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useRouter, useParams } from 'next/navigation';
 import { fetchProducts } from '@/store/productsSlice';
 import { addToCart, openCart } from '@/store/slices/cartSlice';
+import { fetchWishlist, addToWishlist, removeFromWishlist } from '@/store/slices/wishlistSlice';
 import Link from 'next/link';
 import {
     ArrowLeftIcon,
@@ -28,6 +29,7 @@ export default function AllProductsPage() {
         (state) => state.products
     );
     const { isAuthenticated } = useSelector((state) => state.auth);
+    const { items: wishlistItems } = useSelector((state) => state.wishlist);
 
     const tags = useSelector(state => state.products.tags || []);
 
@@ -36,7 +38,6 @@ export default function AllProductsPage() {
     const [showImageGallery, setShowImageGallery] = useState(false);
     const [selectedImages, setSelectedImages] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [wishlist, setWishlist] = useState([]);
 
     // 🎯 Professional Filter States
     const [selectedCategories, setSelectedCategories] = useState([]);
@@ -57,6 +58,7 @@ export default function AllProductsPage() {
 
     useEffect(() => {
         loadProducts();
+        dispatch(fetchWishlist());
     }, [dispatch]);
 
     const openImageGallery = (imageUrl) => {
@@ -65,11 +67,29 @@ export default function AllProductsPage() {
     };
 
     const toggleWishlist = (productId) => {
-        setWishlist((prev) =>
-            prev.includes(productId)
-                ? prev.filter((id) => id !== productId)
-                : [...prev, productId]
+        if (!isAuthenticated) {
+            console.log('User not authenticated, cannot add to wishlist');
+            return;
+        }
+        
+        const product = products.find(p => p.product_id === productId);
+        if (!product || !product.variants?.[0]) {
+            console.log('Product or variant not found');
+            return;
+        }
+        
+        const variant_id = product.variants[0].variant_id;
+        const isInWishlist = wishlistItems.some(
+            item => item.product_id === productId && item.variant_id === variant_id
         );
+        
+        console.log('Toggling wishlist:', { productId, variant_id, isInWishlist });
+        
+        if (isInWishlist) {
+            dispatch(removeFromWishlist({ product_id: productId, variant_id }));
+        } else {
+            dispatch(addToWishlist({ product_id: productId, variant_id }));
+        }
     };
 
     const isLoading = reduxLoading || localLoading;
@@ -215,30 +235,17 @@ export default function AllProductsPage() {
                 {/* 🎯 Professional Filters Section */}
                 <div className="mb-8 space-y-4">
                     {/* Main Filter Bar */}
-                    <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-                        <div className="flex flex-col lg:flex-row gap-6 items-start lg:items-center">
-                            {/* Search */}
-                            <div className="flex-1 w-full">
-                                <div className="relative">
-                                    <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
-                                    <input
-                                        type="text"
-                                        placeholder="Search products by name or description..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200"
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Filter Controls */}
-                            <div className="flex flex-wrap gap-3 w-full lg:w-auto">
+                    <div className="">
+                        {/* Professional filters header layout */}
+                        <div className="flex w-full items-center justify-between gap-4">
+                            {/* Left: Sort Dropdown */}
+                            <div className="flex items-center gap-3">
                                 {/* Sort Dropdown */}
                                 <div className="relative">
                                     <select
                                         value={sortBy}
                                         onChange={(e) => setSortBy(e.target.value)}
-                                        className="appearance-none bg-white border border-gray-300 rounded-xl pl-4 pr-10 py-3 text-sm text-gray-700 focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 cursor-pointer"
+                                        className="appearance-none bg-white border border-gray-300 rounded-xl pl-4 pr-10 py-3 text-sm text-gray-700 focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 cursor-pointer min-w-[200px]"
                                     >
                                         <option value="featured">Featured</option>
                                         <option value="price-low-high">Price: Low to High</option>
@@ -248,7 +255,10 @@ export default function AllProductsPage() {
                                     </select>
                                     <ChevronDownIcon className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                                 </div>
+                            </div>
 
+                            {/* Right: Filters + Clear */}
+                            <div className="flex items-center gap-3">
                                 {/* Filter Toggle Button */}
                                 <button
                                     onClick={() => setIsFilterOpen(!isFilterOpen)}
@@ -267,7 +277,7 @@ export default function AllProductsPage() {
                                 {(selectedCategories.length > 0 || priceRange[1] < maxPrice) && (
                                     <button
                                         onClick={clearAllFilters}
-                                        className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors duration-200"
+                                        className="inline-flex items-center gap-2 text-gray-700 hover:text-gray-900 text-sm font-medium transition-colors duration-200"
                                     >
                                         <XMarkIcon className="w-4 h-4" />
                                         Clear All
@@ -400,29 +410,34 @@ export default function AllProductsPage() {
                         layout
                         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
                     >
-                        {sortedProducts.map(product => (
-                            <ProductCard
-                                key={product.product_id}
-                                product={product}
-                                isAuthenticated={isAuthenticated}
-                                inWishlist={wishlist.includes(product.product_id)}
-                                onToggleWishlist={toggleWishlist}
-                                onNavigate={(id) => router.push(`/products/${id}`)}
-                                onAddToCart={({ product: p, variant }) => {
-                                    const cartItem = {
-                                        product_id: p.product_id,
-                                        product_name: p.product_name,
-                                        variant_id: variant.variant_id,
-                                        variant_name: variant.variant_name,
-                                        price: parseFloat(variant.final_price || variant.price),
-                                        quantity: 1,
-                                        main_image: p.main_image,
-                                    };
-                                    dispatch(addToCart(cartItem));
-                                    dispatch(openCart());
-                                }}
-                            />
-                        ))}
+                        {sortedProducts.map(product => {
+                            const isInWishlist = wishlistItems.some(
+                                item => item.product_id === product.product_id
+                            );
+                            return (
+                                <ProductCard
+                                    key={product.product_id}
+                                    product={product}
+                                    isAuthenticated={isAuthenticated}
+                                    inWishlist={isInWishlist}
+                                    onToggleWishlist={toggleWishlist}
+                                    onNavigate={(id) => router.push(`/products/${id}`)}
+                                    onAddToCart={({ product: p, variant }) => {
+                                        const cartItem = {
+                                            product_id: p.product_id,
+                                            product_name: p.product_name,
+                                            variant_id: variant.variant_id,
+                                            variant_name: variant.variant_name,
+                                            price: parseFloat(variant.final_price || variant.price),
+                                            quantity: 1,
+                                            main_image: p.main_image,
+                                        };
+                                        dispatch(addToCart(cartItem));
+                                        dispatch(openCart());
+                                    }}
+                                />
+                            );
+                        })}
                     </motion.div>
                 ) : (
                     <div className="bg-white rounded-2xl border border-gray-200 p-16 text-center">
@@ -447,13 +462,7 @@ export default function AllProductsPage() {
                 )}
             </div>
 
-            {/* {showImageGallery && selectedImages.length > 0 && (
-                <ImageGalleryModal
-                    images={selectedImages}
-                    productName="Product Image"
-                    onClose={() => setShowImageGallery(false)}
-                />
-            )} */}
+            
         </div>
     );
 }

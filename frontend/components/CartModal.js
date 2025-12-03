@@ -2,20 +2,31 @@
 'use client';
 
 import { useSelector, useDispatch } from 'react-redux';
-import { closeCart, removeFromCart, updateCartItemQuantity, clearCart } from '@/store/slices/cartSlice';
-import { XMarkIcon, PlusIcon, MinusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { closeCart, removeFromCart, updateCartItemQuantity, clearCart, addToCart } from '@/store/slices/cartSlice';
+import { removeFromWishlist } from '@/store/slices/wishlistSlice';
+import { XMarkIcon, PlusIcon, MinusIcon, TrashIcon, ShoppingBagIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AuthModal from './AuthModal';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function CartModal() {
   const dispatch = useDispatch();
   const router = useRouter();
   const { isOpen, items, loading } = useSelector((state) => state.cart);
+  const { items: wishlistItems } = useSelector((state) => state.wishlist);
   const { isAuthenticated } = useSelector((state) => state.auth);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [activeTab, setActiveTab] = useState('cart'); // 'cart' or 'wishlist'
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const handleClose = () => dispatch(closeCart());
   const handleRemove = (item) => {
@@ -24,12 +35,36 @@ export default function CartModal() {
   };
   const handleClearCart = () => dispatch(clearCart());
 
+  const handleRemoveFromWishlist = (item) => {
+    dispatch(removeFromWishlist({ 
+      product_id: item.product_id, 
+      variant_id: item.variant_id 
+    }));
+  };
+
+  const handleAddToCartFromWishlist = (item) => {
+    const cartItem = {
+      product_id: item.product_id,
+      variant_id: item.variant_id,
+      quantity: 1,
+      price: item.final_price || item.variant_price || item.price,
+      main_image: item.main_image
+    };
+    dispatch(addToCart(cartItem));
+    // Remove from wishlist after adding to cart
+    dispatch(removeFromWishlist({ product_id: item.product_id, variant_id: item.variant_id }));
+  };
+
   const handleQuantityChange = (cart_item_id, quantity) => {
     if (quantity < 1) return;
     dispatch(updateCartItemQuantity({ cart_item_id, quantity }));
   };
 
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  
+  // Determine what to display
+  const displayItems = isMobile && activeTab === 'wishlist' ? wishlistItems : items;
+  const displayMode = isMobile && activeTab === 'wishlist' ? 'wishlist' : 'cart';
 
   return (
     <AnimatePresence>
@@ -53,9 +88,11 @@ export default function CartModal() {
             className="fixed right-0 top-0 z-50 w-full sm:w-[420px] h-full bg-white/80 backdrop-blur-xl shadow-2xl flex flex-col rounded-l-2xl border-l border-gray-200"
           >
             <div className="flex items-center justify-between p-5 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-800">Your Cart</h2>
+              <h2 className="text-xl font-semibold text-gray-800">
+                {isMobile && activeTab === 'wishlist' ? 'Your Wishlist' : 'Your Cart'}
+              </h2>
               <div className="flex items-center gap-2">
-                {items.length > 0 && (
+                {displayMode === 'cart' && items.length > 0 && (
                     <button
                         onClick={handleClearCart}
                         className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -73,18 +110,46 @@ export default function CartModal() {
               </div>
             </div>
 
+            {/* Mobile Tab Switcher */}
+            {isMobile && (
+              <div className="flex border-b border-gray-200">
+                <button
+                  onClick={() => setActiveTab('cart')}
+                  className={`flex-1 py-3 text-sm font-medium transition-colors ${
+                    activeTab === 'cart'
+                      ? 'text-[#D8234B] border-b-2 border-[#D8234B]'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Cart {items.length > 0 && `(${items.length})`}
+                </button>
+                <button
+                  onClick={() => setActiveTab('wishlist')}
+                  className={`flex-1 py-3 text-sm font-medium transition-colors ${
+                    activeTab === 'wishlist'
+                      ? 'text-[#D8234B] border-b-2 border-[#D8234B]'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                >
+                  Wishlist {wishlistItems.length > 0 && `(${wishlistItems.length})`}
+                </button>
+              </div>
+            )}
+
             <div className="grow overflow-y-auto p-5 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent will-change-transform">
-              {loading && <div className="text-center">Updating cart...</div>}
-              {items.length === 0 ? (
+              {loading && <div className="text-center">Updating...</div>}
+              {displayItems.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                  <p className="text-lg">Your cart is empty</p>
-                  <p className="text-sm mt-1">Add something to make it happy</p>
+                  <p className="text-lg">Your {displayMode} is empty</p>
+                  <p className="text-sm mt-1">
+                    {displayMode === 'cart' ? 'Add something to make it happy' : 'Save your favorites here'}
+                  </p>
                 </div>
               ) : (
                 <ul className="divide-y divide-gray-200">
-                  {items.map((item) => (
+                  {displayItems.map((item) => (
                     <motion.li
-                      key={item.variant_id}
+                      key={displayMode === 'cart' ? item.variant_id : `${item.product_id}-${item.variant_id}`}
                       initial={{ opacity: 0, y: 6 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.16, ease: 'easeOut' }}
@@ -106,27 +171,61 @@ export default function CartModal() {
                                 {item.product_name}
                               </Link>
                             </h3>
-                            <p className="ml-4">₹{item.price}</p>
+                            <p className="ml-4">
+                              ₹{displayMode === 'cart' ? item.price : (item.final_price || item.variant_price || item.price)}
+                            </p>
                           </div>
                           <p className="text-sm text-gray-500">{item.variant_name}</p>
+                          {displayMode === 'wishlist' && (
+                            <p className={`text-xs mt-1 ${item.stock > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {item.stock > 0 ? 'In Stock' : 'Out of Stock'}
+                            </p>
+                          )}
                         </div>
                         <div className="flex flex-1 items-center justify-between text-sm">
-                          <div className="flex items-center border border-gray-200 rounded">
-                            <button onClick={() => handleQuantityChange(item.cart_item_id, item.quantity - 1)} className="p-1.5 hover:bg-gray-100 rounded-l">
-                              <MinusIcon className="h-4 w-4" />
-                            </button>
-                            <span className="px-3">{item.quantity}</span>
-                            <button onClick={() => handleQuantityChange(item.cart_item_id, item.quantity + 1)} className="p-1.5 hover:bg-gray-100 rounded-r">
-                              <PlusIcon className="h-4 w-4" />
-                            </button>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleRemove(item)}
-                            className="font-medium text-red-600 hover:text-red-500"
-                          >
-                            Remove
-                          </button>
+                          {displayMode === 'cart' ? (
+                            <>
+                              <div className="flex items-center border border-gray-200 rounded">
+                                <button onClick={() => handleQuantityChange(item.cart_item_id, item.quantity - 1)} className="p-1.5 hover:bg-gray-100 rounded-l">
+                                  <MinusIcon className="h-4 w-4" />
+                                </button>
+                                <span className="px-3">{item.quantity}</span>
+                                <button onClick={() => handleQuantityChange(item.cart_item_id, item.quantity + 1)} className="p-1.5 hover:bg-gray-100 rounded-r">
+                                  <PlusIcon className="h-4 w-4" />
+                                </button>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => handleRemove(item)}
+                                className="font-medium text-red-600 hover:text-red-500"
+                              >
+                                Remove
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleAddToCartFromWishlist(item)}
+                                disabled={item.stock === 0}
+                                className={`flex items-center gap-1 font-medium ${
+                                  item.stock > 0
+                                    ? 'text-[#D8234B] hover:text-[#B71C3A]'
+                                    : 'text-gray-400 cursor-not-allowed'
+                                }`}
+                              >
+                                <ShoppingBagIcon className="h-4 w-4" />
+                                Add to Cart
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveFromWishlist(item)}
+                                className="font-medium text-red-600 hover:text-red-500"
+                              >
+                                Remove
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </motion.li>
@@ -135,7 +234,7 @@ export default function CartModal() {
               )}
             </div>
 
-            {items.length > 0 && (
+            {items.length > 0 && displayMode === 'cart' && (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}

@@ -16,6 +16,7 @@ import couponReducer from './couponSlice';
 import cartReducer from './slices/cartSlice';
 import addressReducer from './slices/addressSlice';
 import ordersReducer from './ordersSlice';
+import wishlistReducer from './slices/wishlistSlice';
 
 export const store = configureStore({
   reducer: {
@@ -36,6 +37,7 @@ export const store = configureStore({
         coupons: couponReducer,
         cart: cartReducer,
         addresses: addressReducer,
-        orders: ordersReducer
+        orders: ordersReducer,
+        wishlist: wishlistReducer
   },
 });

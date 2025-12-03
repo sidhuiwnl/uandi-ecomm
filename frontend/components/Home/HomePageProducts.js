@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchProducts } from "@/store/productsSlice";
 import ProductCard from "@/components/ProductCard";
 import { addToCart, openCart } from "@/store/slices/cartSlice";
+import { addToWishlist, removeFromWishlist, fetchWishlist } from "@/store/slices/wishlistSlice";
 
 export default function HomePageProducts() {
   const dispatch = useDispatch();
   const { products, loading } = useSelector((s) => s.products);
   const { isAuthenticated } = useSelector((s) => s.auth);
-  const [wishlist, setWishlist] = useState([]);
+  const { items: wishlistItems } = useSelector((s) => s.wishlist);
 
   useEffect(() => {
     if (!products || products.length === 0) {
@@ -18,12 +19,35 @@ export default function HomePageProducts() {
     }
   }, [dispatch, products]);
 
-  const toggleWishlist = (productId) => {
-    setWishlist((prev) =>
-      prev.includes(productId)
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId]
+  useEffect(() => {
+    dispatch(fetchWishlist());
+  }, [dispatch]);
+
+  const toggleWishlist = async (productId) => {
+    if (!isAuthenticated) {
+      alert("Please log in to use the wishlist feature");
+      return;
+    }
+
+    // Find the product and its first variant
+    const product = products?.find((p) => p.product_id === productId);
+    if (!product || !product.variants?.[0]) {
+      console.error("Product or variant not found");
+      return;
+    }
+
+    const variant_id = product.variants[0].variant_id;
+
+    // Check if already in wishlist
+    const isInWishlist = wishlistItems?.some(
+      (item) => item.product_id === productId && item.variant_id === variant_id
     );
+
+    if (isInWishlist) {
+      await dispatch(removeFromWishlist({ product_id: productId, variant_id }));
+    } else {
+      await dispatch(addToWishlist({ product_id: productId, variant_id }));
+    }
   };
 
   // Randomize & pick 4 products with viable images for ProductCard
@@ -73,32 +97,38 @@ export default function HomePageProducts() {
           </p>
         </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {randomFour.map((product) => (
-          <ProductCard
-            key={product.product_id}
-            product={product}
-            isAuthenticated={isAuthenticated}
-            inWishlist={wishlist.includes(product.product_id)}
-            onToggleWishlist={toggleWishlist}
-            onNavigate={(id) => window.location.href = `/products/${id}`}
-            onAddToCart={({ product: p, variant }) => {
-              if (!variant) return;
-              const price = parseFloat(variant.final_price || variant.price || 0);
-              if (!price) return;
-              const cartItem = {
-                product_id: p.product_id,
-                product_name: p.product_name,
-                variant_id: variant.variant_id,
-                variant_name: variant.variant_name,
-                price,
-                quantity: 1,
-                main_image: p.main_image,
-              };
-              dispatch(addToCart(cartItem));
-              dispatch(openCart());
-            }}
-          />
-        ))}
+        {randomFour.map((product) => {
+          const isInWishlist = wishlistItems?.some(
+            (item) => item.product_id === product.product_id
+          );
+          
+          return (
+            <ProductCard
+              key={product.product_id}
+              product={product}
+              isAuthenticated={isAuthenticated}
+              inWishlist={isInWishlist}
+              onToggleWishlist={toggleWishlist}
+              onNavigate={(id) => window.location.href = `/products/${id}`}
+              onAddToCart={({ product: p, variant }) => {
+                if (!variant) return;
+                const price = parseFloat(variant.final_price || variant.price || 0);
+                if (!price) return;
+                const cartItem = {
+                  product_id: p.product_id,
+                  product_name: p.product_name,
+                  variant_id: variant.variant_id,
+                  variant_name: variant.variant_name,
+                  price,
+                  quantity: 1,
+                  main_image: p.main_image,
+                };
+                dispatch(addToCart(cartItem));
+                dispatch(openCart());
+              }}
+            />
+          );
+        })}
       </div>
 
       <div>

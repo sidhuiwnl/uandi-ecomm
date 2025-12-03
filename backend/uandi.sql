@@ -131,6 +131,39 @@ INSERT INTO `cart_items` VALUES (48,7,14,NULL,28,1,179.00,179.00,'https://pub-25
 UNLOCK TABLES;
 
 --
+-- Table structure for table `wishlist_items`
+--
+
+DROP TABLE IF EXISTS `wishlist_items`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `wishlist_items` (
+  `wishlist_item_id` int unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint unsigned NOT NULL,
+  `product_id` int NOT NULL,
+  `variant_id` int NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`wishlist_item_id`),
+  UNIQUE KEY `unique_wishlist_item` (`user_id`,`product_id`,`variant_id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_product_id` (`product_id`),
+  KEY `idx_variant_id` (`variant_id`),
+  CONSTRAINT `wishlist_items_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  CONSTRAINT `wishlist_items_ibfk_2` FOREIGN KEY (`product_id`) REFERENCES `products` (`product_id`) ON DELETE CASCADE,
+  CONSTRAINT `wishlist_items_ibfk_3` FOREIGN KEY (`variant_id`) REFERENCES `variants` (`variant_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `wishlist_items`
+--
+
+LOCK TABLES `wishlist_items` WRITE;
+/*!40000 ALTER TABLE `wishlist_items` DISABLE KEYS */;
+/*!40000 ALTER TABLE `wishlist_items` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `categories`
 --
 
