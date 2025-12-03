@@ -554,23 +554,28 @@ export default function Page() {
                             dispatch(removeCoupon());
                             setCurrentStep(3);
 
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'Payment Successful',
-                                text: 'Your payment was successful and the order is now processing.',
-                                confirmButtonColor: '#22c55e'
-                            });
+                            // Swal.fire({
+                            //     icon: 'success',
+                            //     title: 'Payment Successful',
+                            //     text: 'Your payment was successful and the order is now processing.',
+                            //     confirmButtonColor: '#22c55e'
+                            // });
 
+                            // Use hard redirect to avoid router hydration/iframe edge cases in production
+                            // Primary: window.location.assign; Secondary: router.replace as a backup
                             try {
-                                // Prefer client navigation via next/router, but await to ensure it runs
-                                await router.push('/profile/orders');
-                            } catch (navErr) {
-                                // If client navigation fails (production edge cases), fallback to full redirect
-                                console.warn('router.push failed, falling back to window.location:', navErr);
+                                window.location.assign('/profile/orders');
+                            } catch (assignErr) {
+                                console.warn('window.location.assign failed, trying router.replace:', assignErr);
                                 try {
-                                    window.location.href = '/profile/orders';
-                                } catch (hrefErr) {
-                                    console.error('Fallback navigation also failed:', hrefErr);
+                                    await router.replace('/profile/orders');
+                                } catch (replaceErr) {
+                                    console.error('router.replace failed; final fallback to href:', replaceErr);
+                                    try {
+                                        window.location.href = '/profile/orders';
+                                    } catch (hrefErr) {
+                                        console.error('All navigation attempts failed:', hrefErr);
+                                    }
                                 }
                             }
                         }
