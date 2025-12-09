@@ -107,7 +107,7 @@ export default function PromotionalBanners() {
         </a>
 
         {/* Dots */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 backdrop-blur-sm bg-black/20 px-5 py-3 rounded-full">
+        <div className="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 flex gap-2 md:gap-3 backdrop-blur-sm bg-black/20 px-3 sm:px-5 py-2 sm:py-3 rounded-full">
           {banners.map((_, i) => (
             <button
               key={i}
@@ -121,8 +121,8 @@ export default function PromotionalBanners() {
               <div
                 className={`h-1 rounded-full transition-all duration-500 ${
                   i === current
-                    ? "w-10 bg-gradient-to-r from-pink-400 to-pink-600"
-                    : "w-8 bg-white/50 group-hover:bg-white/70"
+                    ? "w-8 sm:w-10 bg-gradient-to-r from-pink-400 to-pink-600"
+                    : "w-6 sm:w-8 bg-white/50 group-hover:bg-white/70"
                 }`}
               >
                 {i === current && (
@@ -143,10 +143,10 @@ export default function PromotionalBanners() {
         <button
           onClick={prevSlide}
           aria-label="Previous slide"
-          className="absolute left-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-all duration-300 flex items-center justify-center group shadow-lg opacity-70 hover:opacity-100 focus:opacity-100"
+          className="absolute left-4 md:left-6 bottom-4 md:bottom-6 w-7 sm:w-9 h-7 sm:h-9 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white transition-all duration-200 flex items-center justify-center group shadow opacity-90 hover:opacity-100 focus:opacity-100 z-20"
         >
           <svg
-            className="w-6 h-6 text-gray-800 group-hover:scale-110 transition-transform"
+            className="w-3 sm:w-4 h-3 sm:h-4 text-gray-800 group-hover:scale-105 transition-transform"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -154,7 +154,7 @@ export default function PromotionalBanners() {
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth={2.5}
+              strokeWidth={2}
               d="M15 19l-7-7 7-7"
             />
           </svg>
@@ -163,10 +163,10 @@ export default function PromotionalBanners() {
         <button
           onClick={nextSlide}
           aria-label="Next slide"
-          className="absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/80 backdrop-blur-sm hover:bg-white transition-all duration-300 flex items-center justify-center group shadow-lg opacity-70 hover:opacity-100 focus:opacity-100"
+          className="absolute right-4 md:right-6 bottom-4 md:bottom-6 w-7 sm:w-9 h-7 sm:h-9 rounded-full bg-white/90 backdrop-blur-sm hover:bg-white transition-all duration-200 flex items-center justify-center group shadow opacity-90 hover:opacity-100 focus:opacity-100 z-20"
         >
           <svg
-            className="w-6 h-6 text-gray-800 group-hover:scale-110 transition-transform"
+            className="w-3 sm:w-4 h-3 sm:h-4 text-gray-800 group-hover:scale-105 transition-transform"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -174,7 +174,7 @@ export default function PromotionalBanners() {
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth={2.5}
+              strokeWidth={2}
               d="M9 5l7 7-7 7"
             />
           </svg>
