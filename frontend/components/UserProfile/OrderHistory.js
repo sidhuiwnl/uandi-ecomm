@@ -126,7 +126,7 @@ export default function OrderHistory() {
 
   return (
     <main className=" rounded-2xl py-6">
-      <div className="px-4 sm:px-6 lg:px-8">
+      <div className=" sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div className="text-center md:text-left mb-4 md:mb-0">
             <motion.h2

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
 const banners = [
-  { id: 1, image: "https://pub-25688779f5b34d7a87524a48c1772ab6.r2.dev/banner-1.webp", link: "/products" },
+  { id: 1, image: "https://pub-25688779f5b34d7a87524a48c1772ab6.r2.dev/banner-1-new.webp", link: "/products" },
   { id: 2, image: "https://pub-25688779f5b34d7a87524a48c1772ab6.r2.dev/banner-2.webp", link: "/products/16" },
   { id: 3, image: "https://pub-25688779f5b34d7a87524a48c1772ab6.r2.dev/banner-3.webp", link: "/products/17" },
   { id: 4, image: "https://pub-25688779f5b34d7a87524a48c1772ab6.r2.dev/banner-4.webp", link: "/products/22" },
