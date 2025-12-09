@@ -53,9 +53,17 @@ export default function HomePageProducts() {
   // Randomize & pick 4 products with viable images for ProductCard
   const randomFour = useMemo(() => {
     if (!products || products.length === 0) return [];
-    // Filter to products that have at least one variant with images so ProductCard can render
+    // Filter to active products that have at least one variant with images so ProductCard can render
+    const isActive = (p) => {
+      const status = (p.status || p.product_status || '').toString().toLowerCase();
+      const activeFlag = p.is_active ?? p.active ?? p.enabled;
+      // Consider active when status not explicitly 'inactive' and activeFlag not false/0
+      const notInactive = status ? status !== 'inactive' : true;
+      const flagActive = activeFlag === undefined ? true : Boolean(Number(activeFlag));
+      return notInactive && flagActive;
+    };
     const eligible = products.filter(
-      (p) => p.variants && p.variants[0] && p.variants[0].images && p.variants[0].images.length > 0
+      (p) => isActive(p) && p.variants && p.variants[0] && p.variants[0].images && p.variants[0].images.length > 0
     );
     if (eligible.length === 0) return [];
     // Simple Fisher-Yates shuffle copy

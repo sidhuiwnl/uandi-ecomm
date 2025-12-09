@@ -525,7 +525,7 @@ export default function Page() {
                 notes: {
                     address_id: selectedAddress.address_id
                 },
-                theme: { color: '#2563eb' },
+                theme: { color: '#D8234B' },
                 modal: {
                     ondismiss: () => setIsPaymentProcessing(false)
                 },

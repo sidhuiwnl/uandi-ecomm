@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const razorpayClient = require('../config/razorpay');
 const orderModel = require('../models/orderModel');
 const shippingController = require('./shippingController');
+const { sendOrderEmails } = require('../utils/mailer');
 
 const paymentController = {
 	createRazorpayOrder: async (req, res) => {
@@ -93,6 +94,7 @@ const paymentController = {
 			};
 
 			const result = await orderModel.createOrderWithItems(paymentConfirmedOrder, orderItems);
+			console.log('[paymentController] ✅ Payment verified, order created with ID:', result?.order?.order_number);
 
 			try {
 				const fullOrder = await orderModel.getOrderById(result.order.order_id);
@@ -138,6 +140,51 @@ const paymentController = {
 				}
 			} catch (shiprocketError) {
 				console.error('Shiprocket integration failed after payment:', shiprocketError.message);
+			}
+
+			// Send formatted emails (admin + customer)
+			try {
+				console.log('[paymentController] ✉ Preparing to send order confirmation emails');
+				const fullOrderForEmail = await orderModel.getOrderById(result.order.order_id);
+				const orderDetails = fullOrderForEmail.order;
+				const emailItems = fullOrderForEmail.items || [];
+
+				// Compute summary totals
+				const totals = emailItems.reduce((acc, it) => {
+					const mrp = it.mrp_price != null ? Number(it.mrp_price) : null;
+					const price = Number(it.price || 0);
+					const qty = Number(it.quantity || 1);
+					if (mrp) acc.totalMrp += mrp * qty;
+					acc.totalPrice += price * qty;
+					return acc;
+				}, { totalMrp: 0, totalPrice: 0 });
+				const discountOnMrp = Math.max(0, totals.totalMrp - totals.totalPrice);
+				const deliveryCharge = Number(orderDetails.shipping_amount || 0);
+				const summary = {
+					totalMrp: totals.totalMrp,
+					discountOnMrp,
+					deliveryCharge,
+					totalPrice: totals.totalPrice + deliveryCharge,
+				};
+
+				const customer = {
+					name: orderDetails.full_name,
+					email: orderDetails.email,
+					mobile: orderDetails.phone_number,
+				};
+				const address = {
+					address_line1: orderDetails.address_line_1,
+					address_line2: orderDetails.address_line_2,
+					city: orderDetails.city,
+					state: orderDetails.state,
+					pincode: orderDetails.postal_code,
+				};
+
+				console.log('[paymentController] ▶ Calling sendOrderEmails with order:', orderDetails?.order_number);
+				await sendOrderEmails({ order: orderDetails, customer, address, items: emailItems, summary });
+				console.log('[paymentController] ✅ Order confirmation emails sent');
+			} catch (mailErr) {
+				console.warn('[paymentController] ❌ Email sending failed:', mailErr?.message || mailErr);
 			}
 
 			return res.status(201).json({

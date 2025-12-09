@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import { ArrowLeftIcon, PrinterIcon } from "@heroicons/react/24/outline";
@@ -37,6 +37,20 @@ export default function OrderDetailsPage() {
             fetchOrderDetails();
         }
     }, [orderId]);
+
+    // Compute totals unconditionally to satisfy Hooks rules
+    const totals = useMemo(() => {
+        const totalPrice = items.reduce((acc, it) => acc + Number(it.price || 0) * Number(it.quantity || 1), 0);
+        const totalMrp = items.reduce((acc, it) => {
+            const mrp = it.mrp_price != null ? Number(it.mrp_price) : null;
+            const qty = Number(it.quantity || 1);
+            return acc + (mrp ? mrp * qty : 0);
+        }, 0);
+        const discountOnMrp = Math.max(0, totalMrp - totalPrice);
+        const shipping = Number(order?.shipping_amount || 0);
+        const grandTotal = totalPrice + shipping;
+        return { totalPrice, totalMrp, discountOnMrp, shipping, grandTotal };
+    }, [items, order]);
 
     if (loading) return <div className="p-8 text-center">Loading order details...</div>;
     if (error) return <div className="p-8 text-center text-red-600">{error}</div>;
@@ -92,7 +106,7 @@ export default function OrderDetailsPage() {
                         <div className="divide-y divide-gray-200">
                             {items.map((item) => (
                                 <div key={item.order_item_id} className="p-6 flex gap-4">
-                                    <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                                    <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden shrink-0">
                                         {item.main_image ? (
                                             <img 
                                                 src={item.main_image} 
@@ -103,14 +117,24 @@ export default function OrderDetailsPage() {
                                             <div className="w-full h-full flex items-center justify-center text-gray-400">No Img</div>
                                         )}
                                     </div>
-                                    <div className="flex-1">
+                                        <div className="flex-1">
                                         <div className="flex justify-between items-start">
                                             <div>
                                                 <h3 className="font-medium text-gray-900">{item.product_name}</h3>
                                                 <p className="text-sm text-gray-500 mt-1">Variant: {item.variant_name}</p>
                                                 <p className="text-sm text-gray-500">SKU: {item.sku || 'N/A'}</p>
                                             </div>
-                                            <p className="font-medium text-gray-900">₹{parseFloat(item.price).toLocaleString()}</p>
+                                            <div className="text-right">
+                                                <p className="font-semibold text-gray-900">₹{Number(item.price).toLocaleString()}</p>
+                                                {item.mrp_price && Number(item.mrp_price) > Number(item.price) && (
+                                                    <div className="mt-1 flex items-center gap-2 justify-end">
+                                                        <span className="text-xs text-gray-400 line-through">₹{Number(item.mrp_price).toLocaleString()}</span>
+                                                        <span className="text-[10px] font-semibold text-green-600 bg-green-50 px-1.5 py-0.5 rounded">
+                                                            {Math.round(((Number(item.mrp_price) - Number(item.price)) / Number(item.mrp_price)) * 100)}% OFF
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="mt-4 flex justify-between items-center text-sm">
                                             <div className="text-gray-500">
@@ -126,22 +150,30 @@ export default function OrderDetailsPage() {
                         </div>
                         <div className="p-6 bg-gray-50 border-t border-gray-200 space-y-3">
                             <div className="flex justify-between text-sm text-gray-600">
+                                <span>Total MRP</span>
+                                <span>₹{totals.totalMrp.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-sm text-gray-600">
+                                <span>Discount on MRP</span>
+                                <span>-₹{totals.discountOnMrp.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-sm text-gray-600">
                                 <span>Subtotal</span>
-                                <span>₹{items.reduce((acc, item) => acc + parseFloat(item.sub_total), 0).toLocaleString()}</span>
+                                <span>₹{totals.totalPrice.toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between text-sm text-gray-600">
                                 <span>Shipping</span>
-                                <span>₹0.00</span>
+                                <span>₹{totals.shipping.toLocaleString()}</span>
                             </div>
                             {order.coupon_discount > 0 && (
                                 <div className="flex justify-between text-sm text-green-600">
                                     <span>Discount ({order.coupon_code})</span>
-                                    <span>-₹{parseFloat(order.coupon_discount).toLocaleString()}</span>
+                                    <span>-₹{Number(order.coupon_discount).toLocaleString()}</span>
                                 </div>
                             )}
                             <div className="flex justify-between text-base font-bold text-gray-900 pt-3 border-t border-gray-200">
                                 <span>Total</span>
-                                <span>₹{parseFloat(order.total_amount).toLocaleString()}</span>
+                                <span>₹{(totals.grandTotal - Number(order.coupon_discount || 0)).toLocaleString()}</span>
                             </div>
                         </div>
                     </div>
