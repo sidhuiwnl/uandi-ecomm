@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import AuthModal from './AuthModal';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import {setCheckoutFromCart} from "@/store/slices/checkoutSlice";
 
 export default function CartModal() {
   const dispatch = useDispatch();
@@ -252,13 +253,16 @@ export default function CartModal() {
                   <button
                     type="button"
                     onClick={() => {
-                      if (isAuthenticated) {
-                        handleClose();
-                        router.push('/checkout');
-                      } else {
-                        // show auth modal inline; redirect after success
+                      if (!isAuthenticated) {
                         setShowAuthModal(true);
+                        return;
                       }
+
+                      // ✅ MOVE CART → CHECKOUT STATE
+                      dispatch(setCheckoutFromCart(items));
+
+                      handleClose();
+                      router.push('/checkout');
                     }}
                     className="flex w-full cursor-pointer items-center justify-center rounded-md border border-transparent bg-[#D8234B] px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-[#B71C3A]"
                   >

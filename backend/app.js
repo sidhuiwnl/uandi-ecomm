@@ -106,17 +106,22 @@ const couponRoutes = require('./routes/couponRoutes');
 app.use('/coupons', couponRoutes);
 
 
+
+
 const cartRoutes = require('./routes/cartRoutes');
 const orderRoutes = require("./routes/orderRoutes");
 const addressesRoutes = require("./routes/addressRoutes");
 const paymentRoutes = require('./routes/paymentRoutes');
 const wishlistRoutes = require('./routes/wishlistRoutes');
+const routineRoutes = require('./routes/userRoutineRoutes');
+
 app.use('/cart', cartRoutes);
 app.use("/orders",orderRoutes)
 
 app.use("/address",addressesRoutes)
 app.use('/payments', paymentRoutes);
 app.use('/wishlist', wishlistRoutes);
+app.use('/routines',routineRoutes);
 
 const shippingRoutes = require('./routes/shippingRoutes');
 app.use('/shipping', shippingRoutes);

@@ -1,5 +1,6 @@
 
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+
 import axios from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
@@ -16,6 +17,8 @@ export const fetchCart = createAsyncThunk('cart/fetchCart', async (_, { getState
     return JSON.parse(localStorage.getItem('cart')) || [];
   }
 });
+
+
 
 export const addToCart = createAsyncThunk(
     'cart/addToCart',
@@ -155,6 +158,7 @@ const cartSlice = createSlice({
     items: [],
     loading: false,
     error: null,
+      checkout_mode: null,
   },
   reducers: {
     openCart: (state) => {
@@ -163,6 +167,10 @@ const cartSlice = createSlice({
     closeCart: (state) => {
       state.isOpen = false;
     },
+      setCartItems: (state, action) => {
+          state.items = action.payload;
+          state.checkout_mode = "routine";
+      },
   },
   extraReducers: (builder) => {
     builder
@@ -196,6 +204,6 @@ const cartSlice = createSlice({
   },
 });
 
-export const { openCart, closeCart } = cartSlice.actions;
+export const { openCart, closeCart,setCartItems  } = cartSlice.actions;
 
 export default cartSlice.reducer;

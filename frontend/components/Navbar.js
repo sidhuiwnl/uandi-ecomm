@@ -50,13 +50,13 @@ export default function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
-   const [isLoggingOut, setIsLoggingOut] = useState(false);
-    const dispatch = useDispatch();
-    const router = useRouter();
-    const pathname = usePathname();
-    const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
-    const { items } = useSelector((state) => state.cart);
-    const { items: wishlistItems } = useSelector((state) => state.wishlist);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const dispatch = useDispatch();
+  const router = useRouter();
+  const pathname = usePathname();
+  const { user, isAuthenticated, loading } = useSelector((state) => state.auth);
+  const { items } = useSelector((state) => state.cart);
+  const { items: wishlistItems } = useSelector((state) => state.wishlist);
 
   const navLinks = [
     { name: 'Shop All', href: '/products' },
@@ -64,6 +64,7 @@ export default function Navbar() {
     { name: 'Collections', href: '/#collections' },
     { name: 'About', href: '/about' },
     { name: 'AI Skincare', href: '/ai-skincare' },
+    { name: 'Build Your Box', href: '/Own-Box', isBoxBuilder: true },
   ];
 
   useEffect(() => {
@@ -90,7 +91,7 @@ export default function Navbar() {
                 dispatch(mergeWishlists(user));
               })
               .catch(() => router.push("/"));
-          } 
+          }
           // else {
           //   router.push("/");
           // }
@@ -104,7 +105,7 @@ export default function Navbar() {
     e.stopPropagation();
     // setDropdownOpen(false);
     setIsLoggingOut(true); // Set flag before logout
-  
+
     dispatch(logout())
       .unwrap()
       .then(() => {
@@ -118,7 +119,7 @@ export default function Navbar() {
   };
   const firstName = isAuthenticated ? getFirstName(user) : '';
   const avatarUrl = isAuthenticated ? getAvatar(user) : null;
-  
+
 
   return (
     <>
@@ -129,25 +130,59 @@ export default function Navbar() {
           <div className="hidden md:flex items-center gap-4 lg:gap-6 xl:gap-8">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
+
+              if (link.isBoxBuilder) {
+                return (
+                  <div key={link.name} className="relative group">
+                    {/* Trigger */}
+                    <span className="text-[9px] md:text-[10px] xl:text-[15px] 
+                       text-gray-800 hover:text-black font-medium 
+                       cursor-pointer whitespace-nowrap">
+                      {link.name}
+                    </span>
+
+                    {/* Hover bridge (IMPORTANT) */}
+                    <div className="absolute left-0 top-full h-2 w-full" />
+
+                    {/* Dropdown */}
+                    <div
+                      className="
+          absolute left-0 top-full mt-2 w-44
+          bg-white border border-gray-200 rounded-md shadow-lg
+          opacity-0 invisible
+          group-hover:opacity-100 group-hover:visible
+          hover:opacity-100 hover:visible
+          transition-opacity duration-150
+          z-50
+        "
+                    >
+                      {[3, 4, 5].map((count) => (
+                        <Link
+                          key={count}
+                          href={`/Own-Box?slots=${count}`}
+                          className="block px-4 py-2 text-sm hover:bg-gray-50"
+                        >
+                          Build with {count} items
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+
+
+              // Normal links
               return (
                 <Link
                   key={link.name}
                   href={link.href}
-                  onClick={(e) => {
-                    if (link.href.includes('#') && pathname === '/') {
-                      e.preventDefault();
-                      const id = link.href.split('#')[1];
-                      const el = document.getElementById(id);
-                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                  }}
                   className="text-[9px] md:text-[10px] xl:text-[15px] text-gray-800 hover:text-black font-medium relative group transition-colors whitespace-nowrap"
                 >
                   <span className="relative inline-block">
                     {link.name}
-                    {/* Animated underline highlight */}
                     <span
-                      className={`absolute left-0 -bottom-1 h-0.5 bg-[#D8234B] transition-all duration-300 ease-out ${isActive ? 'w-full' : 'w-0 group-hover:w-full'}`}
+                      className={`absolute left-0 -bottom-1 h-0.5 bg-[#D8234B] transition-all duration-300 ease-out ${isActive ? 'w-full' : 'w-0 group-hover:w-full'
+                        }`}
                     />
                   </span>
                 </Link>
@@ -184,86 +219,86 @@ export default function Navbar() {
           </div>
 
           {/* RIGHT SECTION - Icons & Login */}
-          
 
-            <div className="hidden md:flex items-center gap-3 lg:gap-4 xl:gap-5 text-gray-800 ml-auto">
-              <button aria-label="Search" onClick={() => setSearchOpen(true)}>
-                <Search className="w-5 h-5 cursor-pointer hover:text-black" />
-              </button>
+
+          <div className="hidden md:flex items-center gap-3 lg:gap-4 xl:gap-5 text-gray-800 ml-auto">
+            <button aria-label="Search" onClick={() => setSearchOpen(true)}>
+              <Search className="w-5 h-5 cursor-pointer hover:text-black" />
+            </button>
+            <button
+              aria-label="Wishlist"
+              className="relative hover:text-black transition"
+              onClick={() => dispatch(openWishlist())}
+            >
+              <Heart className="w-5 h-5 cursor-pointer" />
+              {wishlistItems.length > 0 && (
+                <span className="absolute -top-2 -right-2 bg-black text-white text-[10px] rounded-full px-[5px]">
+                  {wishlistItems.length}
+                </span>
+              )}
+            </button>
+            <button
+              aria-label="Cart"
+              className="relative hover:text-black transition"
+              onClick={() => dispatch(openCart())}
+            >
+              <ShoppingBag className="w-5 h-5" />
+              {items.length > 0 && (
+                <span className="absolute -top-2 -right-2 bg-black text-white text-[10px] rounded-full px-[5px]">
+                  {items.length}
+                </span>
+              )}
+            </button>
+
+            {/* USER / LOGIN */}
+            {!isAuthenticated ? (
               <button
-                aria-label="Wishlist"
-                className="relative hover:text-black transition"
-                onClick={() => dispatch(openWishlist())}
+                onClick={() => setAuthModalOpen(true)}
+                className="flex items-center space-x-2 border border-gray-400 rounded-md px-3 py-1 text-sm hover:bg-gray-100"
               >
-                <Heart className="w-5 h-5 cursor-pointer" />
-                {wishlistItems.length > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-black text-white text-[10px] rounded-full px-[5px]">
-                    {wishlistItems.length}
-                  </span>
-                )}
+                <User className="w-4 h-4" />
+                <span>Login</span>
               </button>
-              <button
-                    aria-label="Cart"
-                    className="relative hover:text-black transition"
-                    onClick={() => dispatch(openCart())}
-                >
-                  <ShoppingBag className="w-5 h-5" />
-                  {items.length > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-black text-white text-[10px] rounded-full px-[5px]">
-                      {items.length}
-                    </span>
-                  )}
-                </button>
-  
-              {/* USER / LOGIN */}
-              {!isAuthenticated ? (
+            ) : (
+              <div className="relative">
                 <button
-                  onClick={() => setAuthModalOpen(true)}
-                  className="flex items-center space-x-2 border border-gray-400 rounded-md px-3 py-1 text-sm hover:bg-gray-100"
+                  onClick={() => setUserMenuOpen((v) => !v)}
+                  className="flex items-center gap-2 border border-gray-300 rounded-md px-2.5 py-1 hover:bg-gray-100"
                 >
-                  <User className="w-4 h-4" />
-                  <span>Login</span>
-                </button>
-              ) : (
-                <div className="relative">
-                  <button
-                    onClick={() => setUserMenuOpen((v) => !v)}
-                    className="flex items-center gap-2 border border-gray-300 rounded-md px-2.5 py-1 hover:bg-gray-100"
-                  >
-                    {avatarUrl ? (
-                      <Image
-                        src={avatarUrl}
-                        alt={firstName}
-                        width={24}
-                        height={24}
-                        className="rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs font-semibold">
-                        {firstName.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                    <span className="text-sm font-medium text-gray-800">{firstName}</span>
-                  </button>
-                  {userMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-                      <button
-                        className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
-                        onClick={() => { setUserMenuOpen(false); router.push('/profile'); }}
-                      >
-                        Profile
-                      </button>
-                      <button
-                        className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                        onClick={handleLogout}
-                      >
-                        Logout
-                      </button>
+                  {avatarUrl ? (
+                    <Image
+                      src={avatarUrl}
+                      alt={firstName}
+                      width={24}
+                      height={24}
+                      className="rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs font-semibold">
+                      {firstName.charAt(0).toUpperCase()}
                     </div>
                   )}
-                </div>
-              )}
-            </div>
+                  <span className="text-sm font-medium text-gray-800">{firstName}</span>
+                </button>
+                {userMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                    <button
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
+                      onClick={() => { setUserMenuOpen(false); router.push('/profile'); }}
+                    >
+                      Profile
+                    </button>
+                    <button
+                      className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+                      onClick={handleLogout}
+                    >
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           {/* MOBILE RIGHT: Cart + User */}
           <div className="flex items-center gap-3 ml-auto md:hidden relative z-10">
@@ -323,7 +358,7 @@ export default function Navbar() {
             )}
           </div>
         </div>
-          {/* Mobile Drawer */}
+        {/* Mobile Drawer */}
         <div
           className={`md:hidden fixed inset-y-0 left-0 z-40 w-72 bg-[#FCFBF5] border-r border-gray-200 shadow-xl transform transition-transform duration-300 ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`}
         >

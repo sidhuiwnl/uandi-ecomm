@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import axios from "axios";
 import {
-    MapPin, Phone, User, ArrowRight, Tag, X,
+    MapPin, ArrowRight, Tag, X,
     Plus, Shield, CheckCircle2, Package,
-    CreditCard, Lock, ShoppingCart, ChevronDown,
+    CreditCard, ShoppingCart, ChevronDown,
     Truck
 } from "lucide-react";
 import CartSummary from "@/components/Checkout/CartSummary";
@@ -23,6 +23,7 @@ import { completeOrderAfterPayment } from "@/store/ordersSlice";
 import { clearCart } from "@/store/slices/cartSlice";
 import Swal from "sweetalert2";
 import AvailableCoupons from "@/components/AvailableCoupons";
+import {clearCheckout} from "@/store/slices/checkoutSlice";
 
 
 const getErrorMessage = (error) => {
@@ -40,7 +41,8 @@ export default function Page() {
 
     const authState = useSelector((state) => state.auth);
     const { addresses, loading: addressesLoading, error: addressesError } = useSelector((state) => state.addresses);
-    const { items, loading: cartLoading } = useSelector((state) => state.cart);
+    const { source, items } = useSelector((state) => state.checkout);
+
 
     const {
         appliedCoupon,
@@ -67,7 +69,6 @@ export default function Page() {
     const [formErrors, setFormErrors] = useState({});
     const [currentStep, setCurrentStep] = useState(1);
     const [savingAddress, setSavingAddress] = useState(false);
-    const [isEmptyCart, setIsEmptyCart] = useState(false); // New state for empty cart
     const [razorpayReady, setRazorpayReady] = useState(false);
     const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
     const [showAvailableCoupons, setShowAvailableCoupons] = useState(false);
@@ -87,14 +88,8 @@ export default function Page() {
         { number: 3, title: 'Payment', completed: currentStep > 3 }
     ];
 
-    // Check for empty cart - moved inside useEffect
-    useEffect(() => {
-        if (cartLoading) {
-            setIsEmptyCart(false);
-            return;
-        }
-        setIsEmptyCart(!items || items.length === 0);
-    }, [items, cartLoading]);
+    const isEmptyCheckout = !items || items.length === 0;
+
 
     useEffect(() => {
         const scriptSrc = 'https://checkout.razorpay.com/v1/checkout.js';
@@ -198,23 +193,17 @@ export default function Page() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }, [currentStep]);
 
-    // Handle empty cart rendering
-    if (cartLoading) {
-        return (
-            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-                <div className="text-center text-gray-600">Loading your cart…</div>
-            </div>
-        );
-    }
-    if (isEmptyCart) {
+
+    if (isEmptyCheckout) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
                     <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
                         <ShoppingCart className="w-10 h-10 text-gray-400" />
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Your cart is empty</h2>
-                    <p className="text-gray-600 mb-6">Add some products to proceed with checkout</p>
+                    <h2>Your checkout is empty</h2>
+                    <p>Please start from cart or routine</p>
+
                     <button
                         onClick={() => router.push('/products')}
                         className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
@@ -383,6 +372,7 @@ export default function Page() {
             coupon_code: couponCode.toUpperCase(),
             cart_items: items,
             subtotal,
+            source,
             user_id: localUser?.user_id
         })).then((result) => {
             if (result.type === 'coupon/validateCoupon/fulfilled') {
@@ -470,6 +460,7 @@ export default function Page() {
             payment_method: 'Razorpay',
             payment_status: 'Pending',
             order_status: 'Processing',
+            checkout_source: source,
             coupon_id: appliedCoupon?.coupon_id || null,
             coupon_code: appliedCoupon?.coupon_code || null,
             coupon_type: appliedCoupon?.coupon_type || null,
@@ -557,9 +548,13 @@ export default function Page() {
 
                             localStorage.setItem('checkoutData', JSON.stringify(checkoutData));
 
-                            dispatch(clearCart());
+
                             dispatch(removeCoupon());
+                            dispatch(clearCheckout())
                             setCurrentStep(3);
+                            if (source === "cart") {
+                                dispatch(clearCart()); // 👈 clear cart only if cart checkout
+                            }
 
                             // Swal.fire({
                             //     icon: 'success',
@@ -1277,7 +1272,7 @@ export default function Page() {
             </AnimatePresence>
 
             {/* Mobile Sticky Bottom CTA - Myntra Style */}
-            {!isEmptyCart && (
+            {!isEmptyCheckout && (
                 <div className="fixed bottom-0 left-0 right-0 z-50 block sm:hidden bg-white border-t border-gray-200 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] safe-area-inset-bottom">
                     <div className="px-4 py-3 flex items-center justify-between gap-4">
                         {/* Left: Price Details */}
