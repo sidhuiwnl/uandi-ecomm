@@ -23,20 +23,6 @@ const routineController = {
                 });
             }
 
-            /* ---------- DUPLICATE CHECK ---------- */
-            const isDuplicate = await RoutineModel.isDuplicateRoutine(
-                user_id,
-                routine_name,
-                slot_count,
-                items
-            );
-
-            if (isDuplicate) {
-                return res.status(409).json({
-                    success: false,
-                    message: 'Routine with same name and products already exists'
-                });
-            }
 
             /* ---------- CREATE ROUTINE ---------- */
             const routineId = await RoutineModel.createRoutine(

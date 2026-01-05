@@ -18,6 +18,9 @@ const orderController = {
                     message: 'Order data and items are required'
                 });
             }
+            order.checkout_source =
+                order.checkout_source === 'routine' ? 'routine' : 'cart';
+
 
             // Create order and order items
             const result = await orderModel.createOrderWithItems(order, order_items);

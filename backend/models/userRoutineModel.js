@@ -1,8 +1,10 @@
 const pool = require('../config/database');
+const crypto = require('crypto');
 
-/* -------------------------------
-   Build stable signature
--------------------------------- */
+
+
+
+
 const buildSignature = (items) => {
     return items
         .slice()
@@ -12,6 +14,18 @@ const buildSignature = (items) => {
 };
 
 class RoutineModel {
+
+    static generateRoutineSignature(items) {
+        return crypto
+            .createHash('sha256')
+            .update(
+                items
+                    .sort((a, b) => a.position - b.position)
+                    .map(i => `${i.product_id}:${i.variant_id ?? 'null'}:${i.position}`)
+                    .join('|')
+            )
+            .digest('hex');
+    }
 
     /* -------------------------------
        DUPLICATE CHECK
@@ -50,21 +64,26 @@ class RoutineModel {
         try {
             await connection.beginTransaction();
 
+            // ✅ 1️⃣ Generate deterministic signature
+            const routine_signature = this.generateRoutineSignature(items);
+
+            // ✅ 2️⃣ Insert routine (DB enforces uniqueness)
             const [routineResult] = await connection.query(
                 `
-                    INSERT INTO user_routines
-                        (user_id, routine_name, slot_count)
-                    VALUES (?, ?, ?)
-                `,
-                [user_id, routine_name, slot_count]
+            INSERT INTO user_routines
+                (user_id, routine_name, slot_count, routine_signature, is_active)
+            VALUES (?, ?, ?, ?, 1)
+            `,
+                [user_id, routine_name, slot_count, routine_signature]
             );
 
             const routine_id = routineResult.insertId;
 
+            // ✅ 3️⃣ Insert items
             const itemValues = items.map(item => [
                 routine_id,
                 item.product_id,
-                item.variant_id,
+                item.variant_id ?? null,
                 item.position
             ]);
 
@@ -82,12 +101,11 @@ class RoutineModel {
 
         } catch (error) {
             await connection.rollback();
-            throw error;
+            throw error; // controller handles ER_DUP_ENTRY
         } finally {
             connection.release();
         }
     }
-
     /* -------------------------------
        GET USER ROUTINES
     -------------------------------- */

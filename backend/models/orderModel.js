@@ -17,8 +17,8 @@ const orderModel = {
                     order_number, user_id, address_id, total_amount, 
                     payment_method, payment_status, order_status,
                     coupon_id, coupon_code, coupon_type, coupon_discount,
-                    source_collection_id, shipping_amount
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    source_collection_id, shipping_amount,checkout_source
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     orderNumber,
                     orderData.user_id,
@@ -32,7 +32,8 @@ const orderModel = {
                     orderData.coupon_type,
                     orderData.coupon_discount || 0,
                     orderData.source_collection_id,
-                    orderData.shipping_amount
+                    orderData.shipping_amount,
+                    orderData.checkout_source || 'cart'
                 ]
             );
 
@@ -61,10 +62,12 @@ const orderModel = {
             await Promise.all(orderItemPromises);
 
             // 4. Clear user's cart after successful order
-            await connection.query(
-                'DELETE FROM cart_items WHERE user_id = ?',
-                [orderData.user_id]
-            );
+            if (orderData.checkout_source === 'cart') {
+                await connection.query(
+                    'DELETE FROM cart_items WHERE user_id = ?',
+                    [orderData.user_id]
+                );
+            }
 
             await connection.commit();
 
